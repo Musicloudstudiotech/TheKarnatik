@@ -9,6 +9,7 @@ import {
   Compass,
   ClipboardList,
   Library,
+  LogOut,
   MapPin,
   MessageCircle,
   Mic,
@@ -27,11 +28,13 @@ import {
   Star,
   SunMedium,
   Ticket,
+  UserCircle2,
   Wand2,
   Volume2,
   Wind
 } from 'lucide-react';
 import './styles.css';
+import { isSupabaseConfigured, supabase } from './lib/supabase.js';
 import {
   databaseStats,
   earTrainingLevels,
@@ -144,8 +147,6 @@ const hindustaniSwaraDisplayAliases = {
 const systems = ['All', 'Hindustani', 'Karnatik'];
 const practiceSteps = ['Arohana-Avarohana', 'Pakad / Chalan', 'Alap Builder', 'Bandish / Kriti'];
 const testTypes = ['Scale', 'Chord', 'Phrase', 'Avoid Notes'];
-const stagingAccessCode = 'RAGA2026';
-const stagingAccessKey = 'thekarnatik-staging-access';
 const concertListings = [
   {
     id: 'blr-ramaseva-01',
@@ -433,7 +434,7 @@ const swaraRoleRank = {
   8: 9
 };
 
-function App() {
+function App({ user, onSignOut }) {
   const [activePage, setActivePage] = useState('practice');
   const [system, setSystem] = useState('All');
   const [query, setQuery] = useState('');
@@ -998,7 +999,8 @@ function App() {
         <div className="top-actions">
           <button className="icon-button" aria-label="Theme"><SunMedium size={20} /></button>
           <button className="system-switch"><SlidersHorizontal size={17} /> {selected.system}</button>
-          <button className="avatar">A</button>
+          <span className="signed-in-user"><UserCircle2 size={18} /> {user?.email || 'Beta user'}</span>
+          <button className="sign-out-button" onClick={onSignOut}><LogOut size={17} /> Sign out</button>
         </div>
       </header>
 
@@ -2600,23 +2602,81 @@ function ControlRow({ label, value, accent }) {
   );
 }
 
-function ProtectedApp() {
-  const [isUnlocked, setIsUnlocked] = useState(() => window.localStorage.getItem(stagingAccessKey) === 'granted');
-  const [code, setCode] = useState('');
+function AuthGate() {
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(isSupabaseConfigured);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  function unlock(event) {
+  useEffect(() => {
+    if (!supabase) {
+      setLoading(false);
+      return undefined;
+    }
+
+    let isMounted = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (isMounted) {
+        setSession(data.session);
+        setLoading(false);
+      }
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+      setLoading(false);
+    });
+
+    return () => {
+      isMounted = false;
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
+  async function handleAuth(event) {
     event.preventDefault();
-    if (code.trim() === stagingAccessCode) {
-      window.localStorage.setItem(stagingAccessKey, 'granted');
-      setIsUnlocked(true);
+    if (!supabase) return;
+
+    setSubmitting(true);
+    setError('');
+    setMessage('');
+
+    const credentials = { email: email.trim(), password };
+    const result = await supabase.auth.signInWithPassword(credentials);
+
+    setSubmitting(false);
+
+    if (result.error) {
+      setError(result.error.message);
       return;
     }
-    setError('Access code not recognised.');
+
+    setMessage('Signed in.');
   }
 
-  if (isUnlocked) {
-    return <App />;
+  async function signOut() {
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
+    setSession(null);
+  }
+
+  if (loading) {
+    return (
+      <main className="access-gate">
+        <section className="access-panel">
+          <p className="access-kicker">Private beta</p>
+          <h1>Checking your session...</h1>
+        </section>
+      </main>
+    );
+  }
+
+  if (session) {
+    return <App user={session.user} onSignOut={signOut} />;
   }
 
   return (
@@ -2626,29 +2686,57 @@ function ProtectedApp() {
           <span className="brand-mark">R</span>
           <span>RAGA Companion</span>
         </div>
-        <p className="access-kicker">Private staging</p>
+        <p className="access-kicker">Private beta</p>
         <h1>TheKarnatik beta is invite-only.</h1>
-        <p className="access-copy">Enter the access code shared by the team to open the current prototype.</p>
-        <form className="access-form" onSubmit={unlock}>
-          <label>
-            Access code
-            <input
-              value={code}
-              onChange={(event) => {
-                setCode(event.target.value);
-                setError('');
-              }}
-              placeholder="Enter code"
-              autoComplete="off"
-              autoFocus
-            />
-          </label>
-          {error ? <p className="access-error">{error}</p> : null}
-          <button type="submit">Unlock Prototype</button>
-        </form>
+        {isSupabaseConfigured ? (
+          <>
+            <p className="access-copy">Use your approved beta account to open the prototype. New users must be invited by the team.</p>
+            <form className="access-form" onSubmit={handleAuth}>
+              <label>
+                Email
+                <input
+                  value={email}
+                  onChange={(event) => {
+                    setEmail(event.target.value);
+                    setError('');
+                  }}
+                  placeholder="you@example.com"
+                  type="email"
+                  autoComplete="email"
+                  autoFocus
+                  required
+                />
+              </label>
+              <label>
+                Password
+                <input
+                  value={password}
+                  onChange={(event) => {
+                    setPassword(event.target.value);
+                    setError('');
+                  }}
+                  placeholder="Minimum 6 characters"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  minLength={6}
+                />
+              </label>
+              {error ? <p className="access-error">{error}</p> : null}
+              {message ? <p className="access-message">{message}</p> : null}
+              <button type="submit" disabled={submitting}>{submitting ? 'Please wait...' : 'Sign in'}</button>
+            </form>
+          </>
+        ) : (
+          <div className="auth-setup">
+            <p className="access-copy">Authentication is ready in the app, but Supabase environment variables are not configured yet.</p>
+            <code>VITE_SUPABASE_URL</code>
+            <code>VITE_SUPABASE_ANON_KEY</code>
+          </div>
+        )}
       </section>
     </main>
   );
 }
 
-createRoot(document.getElementById('root')).render(<ProtectedApp />);
+createRoot(document.getElementById('root')).render(<AuthGate />);

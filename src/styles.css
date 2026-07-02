@@ -118,10 +118,38 @@ button {
   cursor: pointer;
 }
 
+.access-form button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
 .access-error {
   margin: 0;
   color: #a33b25;
   font-weight: 800;
+}
+
+.access-message {
+  margin: 0;
+  color: var(--teal);
+  font-weight: 800;
+}
+
+.auth-setup {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.auth-setup code {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--line);
+  background: var(--paper-2);
+  color: var(--teal-dark);
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-weight: 900;
 }
 
 .app-shell {
@@ -218,14 +246,31 @@ button {
   background: var(--paper);
 }
 
-.avatar {
-  width: 38px;
-  height: 38px;
-  border: 0;
-  border-radius: 50%;
-  background: var(--teal);
-  color: white;
-  font-weight: 700;
+.signed-in-user {
+  max-width: 220px;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--teal-dark);
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sign-out-button {
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: 8px;
+  padding: 0 12px;
+  color: var(--teal-dark);
+  font-weight: 900;
+  cursor: pointer;
 }
 
 .workspace {

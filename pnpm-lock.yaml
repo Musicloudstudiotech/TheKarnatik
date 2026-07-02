@@ -8,12 +8,15 @@ importers:
 
   .:
     dependencies:
+      '@supabase/supabase-js':
+        specifier: ^2.110.0
+        version: 2.110.0
       '@vitejs/plugin-react':
         specifier: latest
-        version: 6.0.3(vite@8.1.0)
+        version: 6.0.3(vite@8.1.2)
       lucide-react:
         specifier: latest
-        version: 1.22.0(react@19.2.7)
+        version: 1.23.0(react@19.2.7)
       react:
         specifier: latest
         version: 19.2.7
@@ -22,7 +25,7 @@ importers:
         version: 19.2.7(react@19.2.7)
       vite:
         specifier: latest
-        version: 8.1.0
+        version: 8.1.2
     devDependencies:
       playwright:
         specifier: ^1.61.1
@@ -146,6 +149,33 @@ packages:
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
 
+  '@supabase/auth-js@2.110.0':
+    resolution: {integrity: sha512-Mi288WCTp6wxMFCOu/UgzgHEXODjdl2uVTLqK11eanzGZaldU3RyP8Am+ZbNuVzFP+5+iOvppxzv7N5Ym84xTg==}
+    engines: {node: '>=22.0.0'}
+
+  '@supabase/functions-js@2.110.0':
+    resolution: {integrity: sha512-Fde5wlY8ZZy+9yqrWlQHo8MacSyUBArBEtN2boB4thJQigPnQD/cc61qZN0n3I1L0gwhWtHYwIMnOBKxSvF6Hw==}
+    engines: {node: '>=22.0.0'}
+
+  '@supabase/phoenix@0.4.4':
+    resolution: {integrity: sha512-Gt0pqoXuIqX/8dvG0OKp/wMCobXNH3klNbUPBNyOfN0YA1IswrM3HyWFMOPk1Jy+BRaIyDPcFx4jLBwHNmlyfQ==}
+
+  '@supabase/postgrest-js@2.110.0':
+    resolution: {integrity: sha512-ZbC1QZL3jcvBUfVKjJbgRM27G4Mg3Zzqdm44m5pJafe1e52Cli793EOnwQucomBAGEUDd03Nzaf7XV3ji/XexQ==}
+    engines: {node: '>=22.0.0'}
+
+  '@supabase/realtime-js@2.110.0':
+    resolution: {integrity: sha512-Wn2AWpneZuDFTkp/65tqctvoh+3JvyTjMam8sTMqVWy5BgkU8zAvFwilPYPPPhkINeKF8NAJKP7FclJ2iGCUMw==}
+    engines: {node: '>=22.0.0'}
+
+  '@supabase/storage-js@2.110.0':
+    resolution: {integrity: sha512-71+gU3HrhiylAhftY6FmO5PPdcsScnVcS766CVD+vTYK9qTDLbrx8FhgBYbqGm3iV/wkTfzrNJfjGsMeFRkJRQ==}
+    engines: {node: '>=22.0.0'}
+
+  '@supabase/supabase-js@2.110.0':
+    resolution: {integrity: sha512-8yI84VJiEVW4zxZpLUmxXmjzQ7O2St9X/ymzlBETDHTURPWG3LmvbSiibq+7dqAJmyoUfxZnSfXeM4HCM8s4XQ==}
+    engines: {node: '>=22.0.0'}
+
   '@tybys/wasm-util@0.10.3':
     resolution: {integrity: sha512-F3fo1MYrRJYL3zER0OUOmkutjr1Vp23m7OsSgp7nq4SP6OqX6C/56XFIPAl5bt3zaBRjmW7SGz3u/6LwFpYcOg==}
 
@@ -184,6 +214,10 @@ packages:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
     os: [darwin]
+
+  iceberg-js@0.8.1:
+    resolution: {integrity: sha512-1dhVQZXhcHje7798IVM+xoo/1ZdVfzOMIc8/rgVSijRK38EDqOJoGula9N/8ZI5RD8QTxNQtK/Gozpr+qUqRRA==}
+    engines: {node: '>=20.0.0'}
 
   lightningcss-android-arm64@1.32.0:
     resolution: {integrity: sha512-YK7/ClTt4kAK0vo6w3X+Pnm0D2cf2vPHbhOXdoNti1Ga0al1P4TBZhwjATvjNwLEBCnKvjJc2jQgHXH0NEwlAg==}
@@ -259,8 +293,8 @@ packages:
     resolution: {integrity: sha512-NXYBzinNrblfraPGyrbPoD19C1h9lfI/1mzgWYvXUTe414Gz/X1FD2XBZSZM7rRTrMA8JL3OtAaGifrIKhQ5yQ==}
     engines: {node: '>= 12.0.0'}
 
-  lucide-react@1.22.0:
-    resolution: {integrity: sha512-c9o3l0PiNcgOQDW4F31BEYHudE7kgxVt3o30qMl36ZPwTxXlGB4QnLilhERvVM4uh/pl5MDyY1/gzZSYcHDtBg==}
+  lucide-react@1.23.0:
+    resolution: {integrity: sha512-38BpJcD0JhFosxHApP/BYsBetLpQFRoTRzEzstM/XCc3jsAG7wqaY1lgVwxiUe3xqYE+lNxo2PkCmYwXWrwwIw==}
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
@@ -318,8 +352,8 @@ packages:
   tslib@2.8.1:
     resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
 
-  vite@8.1.0:
-    resolution: {integrity: sha512-BuJcQK/56NQTWDGn4ABea3q4SSBdNPWwNZKTkkUpcMPnLoquSYH8llRtSUIgoL1KSCpHt5eghLShn50mH36y7Q==}
+  vite@8.1.2:
+    resolution: {integrity: sha512-6YYPbRXTxx6bRXmOn7XdnQAy5DQNHhDgtjhDHI13oe4pY93kkcdGJWxpGwOm++/Wh0QpQhDrpIoVMrmrsI5AGQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     peerDependencies:
@@ -439,15 +473,47 @@ snapshots:
 
   '@rolldown/pluginutils@1.0.1': {}
 
+  '@supabase/auth-js@2.110.0':
+    dependencies:
+      tslib: 2.8.1
+
+  '@supabase/functions-js@2.110.0':
+    dependencies:
+      tslib: 2.8.1
+
+  '@supabase/phoenix@0.4.4': {}
+
+  '@supabase/postgrest-js@2.110.0':
+    dependencies:
+      tslib: 2.8.1
+
+  '@supabase/realtime-js@2.110.0':
+    dependencies:
+      '@supabase/phoenix': 0.4.4
+      tslib: 2.8.1
+
+  '@supabase/storage-js@2.110.0':
+    dependencies:
+      iceberg-js: 0.8.1
+      tslib: 2.8.1
+
+  '@supabase/supabase-js@2.110.0':
+    dependencies:
+      '@supabase/auth-js': 2.110.0
+      '@supabase/functions-js': 2.110.0
+      '@supabase/postgrest-js': 2.110.0
+      '@supabase/realtime-js': 2.110.0
+      '@supabase/storage-js': 2.110.0
+
   '@tybys/wasm-util@0.10.3':
     dependencies:
       tslib: 2.8.1
     optional: true
 
-  '@vitejs/plugin-react@6.0.3(vite@8.1.0)':
+  '@vitejs/plugin-react@6.0.3(vite@8.1.2)':
     dependencies:
       '@rolldown/pluginutils': 1.0.1
-      vite: 8.1.0
+      vite: 8.1.2
 
   detect-libc@2.1.2: {}
 
@@ -460,6 +526,8 @@ snapshots:
 
   fsevents@2.3.3:
     optional: true
+
+  iceberg-js@0.8.1: {}
 
   lightningcss-android-arm64@1.32.0:
     optional: true
@@ -510,7 +578,7 @@ snapshots:
       lightningcss-win32-arm64-msvc: 1.32.0
       lightningcss-win32-x64-msvc: 1.32.0
 
-  lucide-react@1.22.0(react@19.2.7):
+  lucide-react@1.23.0(react@19.2.7):
     dependencies:
       react: 19.2.7
 
@@ -571,10 +639,9 @@ snapshots:
       fdir: 6.5.0(picomatch@4.0.4)
       picomatch: 4.0.4
 
-  tslib@2.8.1:
-    optional: true
+  tslib@2.8.1: {}
 
-  vite@8.1.0:
+  vite@8.1.2:
     dependencies:
       lightningcss: 1.32.0
       picomatch: 4.0.4
