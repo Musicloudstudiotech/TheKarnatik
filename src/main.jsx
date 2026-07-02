@@ -144,6 +144,8 @@ const hindustaniSwaraDisplayAliases = {
 const systems = ['All', 'Hindustani', 'Karnatik'];
 const practiceSteps = ['Arohana-Avarohana', 'Pakad / Chalan', 'Alap Builder', 'Bandish / Kriti'];
 const testTypes = ['Scale', 'Chord', 'Phrase', 'Avoid Notes'];
+const stagingAccessCode = 'RAGA2026';
+const stagingAccessKey = 'thekarnatik-staging-access';
 const concertListings = [
   {
     id: 'blr-ramaseva-01',
@@ -2598,4 +2600,55 @@ function ControlRow({ label, value, accent }) {
   );
 }
 
-createRoot(document.getElementById('root')).render(<App />);
+function ProtectedApp() {
+  const [isUnlocked, setIsUnlocked] = useState(() => window.localStorage.getItem(stagingAccessKey) === 'granted');
+  const [code, setCode] = useState('');
+  const [error, setError] = useState('');
+
+  function unlock(event) {
+    event.preventDefault();
+    if (code.trim() === stagingAccessCode) {
+      window.localStorage.setItem(stagingAccessKey, 'granted');
+      setIsUnlocked(true);
+      return;
+    }
+    setError('Access code not recognised.');
+  }
+
+  if (isUnlocked) {
+    return <App />;
+  }
+
+  return (
+    <main className="access-gate">
+      <section className="access-panel">
+        <div className="brand access-brand">
+          <span className="brand-mark">R</span>
+          <span>RAGA Companion</span>
+        </div>
+        <p className="access-kicker">Private staging</p>
+        <h1>TheKarnatik beta is invite-only.</h1>
+        <p className="access-copy">Enter the access code shared by the team to open the current prototype.</p>
+        <form className="access-form" onSubmit={unlock}>
+          <label>
+            Access code
+            <input
+              value={code}
+              onChange={(event) => {
+                setCode(event.target.value);
+                setError('');
+              }}
+              placeholder="Enter code"
+              autoComplete="off"
+              autoFocus
+            />
+          </label>
+          {error ? <p className="access-error">{error}</p> : null}
+          <button type="submit">Unlock Prototype</button>
+        </form>
+      </section>
+    </main>
+  );
+}
+
+createRoot(document.getElementById('root')).render(<ProtectedApp />);
