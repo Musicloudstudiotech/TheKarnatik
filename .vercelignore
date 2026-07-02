@@ -1,8 +1,8 @@
-.DS_Store
 node_modules/
 dist/
+.git/
 .vite/
-.vercel/
-*.log
 outputs/
 work/
+*.log
+.DS_Store
