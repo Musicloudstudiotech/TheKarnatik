@@ -2686,11 +2686,11 @@ function AuthGate() {
           <span className="brand-mark">R</span>
           <span>RAGA Companion</span>
         </div>
-        <p className="access-kicker">Private beta</p>
-        <h1>TheKarnatik beta is invite-only.</h1>
+        <p className="access-kicker">Karnatik.ai private beta</p>
+        <h1>Indian music intelligence, built for serious practice.</h1>
         {isSupabaseConfigured ? (
           <>
-            <p className="access-copy">Use your approved beta account to open the prototype. New users must be invited by the team.</p>
+            <p className="access-copy">Sign in to explore the private Karnatik.ai workspace for raga learning, ear training, shruthi, rhythm, and musician-first AI tools.</p>
             <form className="access-form" onSubmit={handleAuth}>
               <label>
                 Email
