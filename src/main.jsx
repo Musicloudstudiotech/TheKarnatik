@@ -224,6 +224,25 @@ const concertListings = [
     status: 'Open'
   }
 ];
+
+const concertSourceRoadmap = [
+  {
+    name: 'Community submissions',
+    status: 'Prototype ready',
+    detail: 'Teachers, sabhas, artists, and rasikas can add concerts directly.'
+  },
+  {
+    name: 'Verified partner calendars',
+    status: 'Next',
+    detail: 'Sabhas, venues, festivals, and artist websites can feed reviewed listings.'
+  },
+  {
+    name: 'Public event discovery',
+    status: 'Planned',
+    detail: 'Search-backed discovery will need a backend crawler, moderation, and duplicate checks.'
+  }
+];
+
 const roadmapColumns = [
   {
     title: 'Done',
@@ -1809,8 +1828,8 @@ function ConcertsPage() {
     <section className="raga-pane concerts-page">
       <div className="concerts-hero">
         <span>Karnatik.ai Concert Mall</span>
-        <h1>Discover and publish Indian music concerts anywhere.</h1>
-        <p>A living calendar for Karnatik, Hindustani, sabhas, baithaks, temple events, workshops, and community concerts.</p>
+        <h1>Build the living concert calendar for Indian music.</h1>
+        <p>This prototype starts with sample listings and community submissions. Live internet and partner-calendar ingestion will come through the backend pipeline.</p>
       </div>
 
       <div className="concert-search-panel">
@@ -1874,7 +1893,7 @@ function ConcertsPage() {
 
       <div className="concert-source-row">
         <article>
-          <span>Listings</span>
+          <span>Sample Listings</span>
           <strong>{allConcerts.length}</strong>
         </article>
         <article>
@@ -1885,6 +1904,16 @@ function ConcertsPage() {
           <span>Community Queue</span>
           <strong>{openEvents}</strong>
         </article>
+      </div>
+
+      <div className="concert-source-roadmap">
+        {concertSourceRoadmap.map((source) => (
+          <article key={source.name}>
+            <span>{source.status}</span>
+            <strong>{source.name}</strong>
+            <p>{source.detail}</p>
+          </article>
+        ))}
       </div>
 
       <div className="concert-grid">
