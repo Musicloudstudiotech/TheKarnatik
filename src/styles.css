@@ -1632,37 +1632,6 @@ h3 {
   margin: 0 0 16px;
 }
 
-.concert-source-row {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(130px, 1fr));
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.concert-source-row article {
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: rgba(255, 253, 247, 0.8);
-  padding: 12px;
-}
-
-.concert-source-row span {
-  display: block;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.concert-source-row strong {
-  display: block;
-  color: var(--teal-dark);
-  font-size: 25px;
-  line-height: 1;
-  margin-top: 7px;
-}
-
 .concert-source-roadmap {
   display: grid;
   grid-template-columns: repeat(3, minmax(180px, 1fr));
@@ -3317,7 +3286,6 @@ input[type="range"] {
     grid-template-columns: repeat(2, minmax(220px, 1fr));
   }
 
-  .concert-source-row,
   .concert-source-roadmap,
   .concert-grid {
     grid-template-columns: 1fr;

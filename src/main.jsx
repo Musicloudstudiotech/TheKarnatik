@@ -1761,9 +1761,6 @@ function ConcertsPage() {
       return haystack.includes(query);
     });
   }, [allConcerts, search]);
-  const openEvents = submittedEvents.length;
-  const cityCount = new Set(allConcerts.map((event) => event.city)).size;
-  const liveSourceCount = sourceStatuses.filter((source) => source.status === 'live').length;
   const sourceTiles = sourceStatuses.length ? sourceStatuses : concertSourceRoadmap;
 
   useEffect(() => {
@@ -1936,25 +1933,6 @@ function ConcertsPage() {
           <button type="submit"><Send size={16} /> Submit for Review</button>
         </form>
       )}
-
-      <div className="concert-source-row">
-        <article>
-          <span>{liveEvents.length ? 'Live Listings' : 'Seed Listings'}</span>
-          <strong>{allConcerts.length}</strong>
-        </article>
-        <article>
-          <span>Places</span>
-          <strong>{cityCount}</strong>
-        </article>
-        <article>
-          <span>Live Sources</span>
-          <strong>{liveSourceCount}</strong>
-        </article>
-        <article>
-          <span>Community Queue</span>
-          <strong>{openEvents}</strong>
-        </article>
-      </div>
 
       <div className="concert-source-roadmap">
         {sourceTiles.map((source) => (
