@@ -16,17 +16,14 @@ import {
   MicOff,
   Music2,
   Navigation,
-  NotebookPen,
   Pause,
   Play,
   Plus,
   Search,
   Send,
   Settings,
-  SlidersHorizontal,
   Sparkles,
   Star,
-  SunMedium,
   Ticket,
   UserCircle2,
   Wand2,
@@ -1000,11 +997,8 @@ function App({ user, onSignOut }) {
           <button className={`nav-item ${activePage === 'quiz' ? 'active' : ''}`} onClick={() => setActivePage('quiz')}><ClipboardList size={17} /> Quiz</button>
           <button className={`nav-item ${activePage === 'ear-training' ? 'active' : ''}`} onClick={() => setActivePage('ear-training')}><Music2 size={17} /> Ear Training</button>
           <button className={`nav-item ${activePage === 'concerts' ? 'active' : ''}`} onClick={() => setActivePage('concerts')}><CalendarDays size={17} /> Concerts</button>
-          <button className="nav-item"><NotebookPen size={17} /> Notebook</button>
         </nav>
         <div className="top-actions">
-          <button className="icon-button" aria-label="Theme"><SunMedium size={20} /></button>
-          <button className="system-switch"><SlidersHorizontal size={17} /> {selected.system}</button>
           <span className="signed-in-user"><UserCircle2 size={18} /> {user?.email || 'Beta user'}</span>
           <button className="sign-out-button" onClick={onSignOut}><LogOut size={17} /> Sign out</button>
         </div>
