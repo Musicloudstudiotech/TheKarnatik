@@ -488,6 +488,10 @@ function App({ user, onSignOut }) {
   const [testDifficulty, setTestDifficulty] = useState('Foundation');
   const [questionCount, setQuestionCount] = useState(6);
   const [enabledTypes, setEnabledTypes] = useState(['Scale', 'Chord', 'Phrase']);
+  const [companionInput, setCompanionInput] = useState('');
+  const [companionLoading, setCompanionLoading] = useState(false);
+  const [companionError, setCompanionError] = useState('');
+  const [companionMessages, setCompanionMessages] = useState([]);
   const detectorSessionRef = useRef(null);
   const ragaSessionRef = useRef(null);
   const tanpuraRef = useRef(null);
@@ -533,6 +537,17 @@ function App({ user, onSignOut }) {
   useEffect(() => {
     return () => stopTanpura();
   }, []);
+
+  useEffect(() => {
+    setCompanionMessages([
+      {
+        role: 'assistant',
+        content: `Namaskara. I am Mitra for ${selected.name}. Ask me about arohana, avarohana, pakad, practice, chords, or raga recognition.`
+      }
+    ]);
+    setCompanionInput('');
+    setCompanionError('');
+  }, [selected.id]);
 
   useEffect(() => {
     if (metronomeOn) {
@@ -659,6 +674,51 @@ function App({ user, onSignOut }) {
     metronomeRef.current = null;
     setMetronomeOn(false);
     setBeatCount(0);
+  }
+
+  async function askCompanion(promptText) {
+    const question = String(promptText || companionInput).trim();
+    if (!question || companionLoading) return;
+
+    const nextMessages = [...companionMessages, { role: 'user', content: question }];
+    setCompanionMessages(nextMessages);
+    setCompanionInput('');
+    setCompanionLoading(true);
+    setCompanionError('');
+
+    try {
+      const response = await fetch('/api/companion-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question,
+          history: companionMessages,
+          raga: {
+            name: selected.name,
+            system: selected.system,
+            family: selected.family,
+            arohana: selected.arohana,
+            avarohana: selected.avarohana,
+            pakad: selected.pakad,
+            notes: selected.notes
+          }
+        })
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'Companion did not respond.');
+      setCompanionMessages((current) => [...current, {
+        role: 'assistant',
+        content: payload.answer || 'I am here, but I could not form a useful answer yet.'
+      }]);
+    } catch (error) {
+      setCompanionError(error.message);
+      setCompanionMessages((current) => [...current, {
+        role: 'assistant',
+        content: `I could not reach the AI engine right now. For ${selected.name}, start with ${selected.pakad}`
+      }]);
+    } finally {
+      setCompanionLoading(false);
+    }
   }
 
   function toggleMetronome() {
@@ -1259,24 +1319,31 @@ function App({ user, onSignOut }) {
         <aside className="companion-pane">
           <div className="pane-title">Raga Companion</div>
           <div className="chat">
-            <div className="bubble assistant">What aspect of {selected.name} would you like to work on today?</div>
-            <div className="bubble user">Help me with the pakad and how to approach the raga.</div>
-            <div className="reply">
-              <p>Start with the raga signature, then slow down near the emotional center.</p>
-              <div className="suggestion">{selected.pakad}</div>
-              <p>{selected.notes}</p>
-            </div>
+            {companionMessages.map((message, index) => (
+              <div className={`bubble ${message.role}`} key={`${message.role}-${index}`}>
+                {message.content}
+              </div>
+            ))}
+            {companionLoading && <div className="bubble assistant thinking">Mitra is listening...</div>}
+            {companionError && <p className="companion-error">{companionError}</p>}
           </div>
           <div className="quick-actions">
-            <button><Play size={15} /> Demonstrate</button>
-            <button><Wind size={15} /> Play on Tanpura</button>
-            <button><MessageCircle size={15} /> Explain More</button>
-            <button><Music2 size={15} /> Another Raga</button>
+            <button onClick={() => askCompanion(`Give me a 10 minute practice plan for ${selected.name}.`)}><Play size={15} /> Practice Plan</button>
+            <button onClick={() => askCompanion(`Explain the pakad and important phrases of ${selected.name}.`)}><MessageCircle size={15} /> Explain Pakad</button>
+            <button onClick={() => askCompanion(`How should I sing ${selected.name} with tanpura in ${pitch} Sa?`)}><Wind size={15} /> Shruthi Guide</button>
+            <button onClick={() => askCompanion(`Compare ${selected.name} with a similar raga and tell me how not to confuse them.`)}><Music2 size={15} /> Similar Raga</button>
           </div>
-          <label className="ask-box">
-            <input placeholder="Ask about this raga..." />
-            <Send size={18} />
-          </label>
+          <form className="ask-box" onSubmit={(event) => {
+            event.preventDefault();
+            askCompanion();
+          }}>
+            <input
+              value={companionInput}
+              onChange={(event) => setCompanionInput(event.target.value)}
+              placeholder="Ask Mitra about this raga..."
+            />
+            <button type="submit" aria-label="Send companion message"><Send size={18} /></button>
+          </form>
 
           <section className="raga-detect-card">
             <div className="builder-title">

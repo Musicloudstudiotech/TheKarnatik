@@ -2665,6 +2665,9 @@ h3 {
 .chat {
   display: grid;
   gap: 14px;
+  max-height: 420px;
+  overflow: auto;
+  padding-right: 3px;
 }
 
 .bubble {
@@ -2672,6 +2675,7 @@ h3 {
   border-radius: 7px;
   padding: 14px 16px;
   line-height: 1.45;
+  white-space: pre-wrap;
 }
 
 .bubble.assistant {
@@ -2682,6 +2686,16 @@ h3 {
 .bubble.user {
   justify-self: end;
   background: #ecebe7;
+}
+
+.bubble.thinking {
+  opacity: 0.78;
+}
+
+.companion-error {
+  color: #9a3d2f;
+  font-size: 12px;
+  margin: 0;
 }
 
 .reply {
@@ -2721,6 +2735,17 @@ h3 {
   background: var(--paper);
   border-radius: 7px;
   padding: 0 12px;
+}
+
+.ask-box button {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  background: transparent;
+  color: var(--teal-dark);
+  cursor: pointer;
+  display: inline-grid;
+  place-items: center;
 }
 
 .tanpura-card {
