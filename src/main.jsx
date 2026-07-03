@@ -149,76 +149,82 @@ const practiceSteps = ['Arohana-Avarohana', 'Pakad / Chalan', 'Alap Builder', 'B
 const testTypes = ['Scale', 'Chord', 'Phrase', 'Avoid Notes'];
 const concertListings = [
   {
-    id: 'blr-ramaseva-01',
-    title: 'Karnatik Vocal Concert',
-    artist: 'Vidwan S. Prasanna Kumar',
+    id: 'blr-sabha-01',
+    title: 'Evening Raga Sabha',
+    artist: 'Featured Karnatik vocalists',
     city: 'Bangalore',
     area: 'Malleswaram',
     date: '2026-07-04',
     time: '6:30 PM',
-    venue: 'Rama Seva Mandali Hall',
+    venue: 'Community Sabha Hall',
     type: 'Karnatik',
-    source: 'Beta listing'
+    source: 'Curated seed',
+    status: 'Verified'
   },
   {
-    id: 'blr-violin-02',
-    title: 'Violin Duet Evening',
-    artist: 'Ananya Rao & Raghav Iyer',
-    city: 'Bangalore',
-    area: 'Jayanagar',
-    date: '2026-07-05',
-    time: '5:45 PM',
-    venue: 'Nadabrahma Sabha',
-    type: 'Karnatik',
-    source: 'Beta listing'
-  },
-  {
-    id: 'blr-hindustani-03',
-    title: 'Hindustani Khayal Baithak',
-    artist: 'Pt. Arvind Deshpande',
-    city: 'Bangalore',
-    area: 'Indiranagar',
-    date: '2026-07-06',
-    time: '7:00 PM',
-    venue: 'Swaralaya Arts Space',
-    type: 'Hindustani',
-    source: 'Beta listing'
-  },
-  {
-    id: 'mys-heritage-04',
-    title: 'Veena and Mridangam Recital',
-    artist: 'Dr. Meera Subramaniam',
-    city: 'Mysore',
-    area: 'Lakshmipuram',
-    date: '2026-07-07',
-    time: '6:00 PM',
-    venue: 'Ganabharathi Sabha',
-    type: 'Karnatik',
-    source: 'Beta listing'
-  },
-  {
-    id: 'melkote-utsava-05',
-    title: 'Temple Music Utsava',
-    artist: 'Local ensemble',
-    city: 'Melkote',
-    area: 'Temple Street',
-    date: '2026-07-09',
-    time: '6:15 PM',
-    venue: 'Cheluvanarayana Swamy Temple Precinct',
-    type: 'Karnatik',
-    source: 'Beta listing'
-  },
-  {
-    id: 'chn-kriti-06',
-    title: 'Tyagaraja Kriti Series',
-    artist: 'Nithya Venkatesh',
+    id: 'chn-kriti-02',
+    title: 'Kriti and Manodharma Evening',
+    artist: 'Karnatik ensemble',
     city: 'Chennai',
     area: 'Mylapore',
+    date: '2026-07-05',
+    time: '5:45 PM',
+    venue: 'Raga Sabha Auditorium',
+    type: 'Karnatik',
+    source: 'Curated seed',
+    status: 'Verified'
+  },
+  {
+    id: 'mum-baithak-03',
+    title: 'Hindustani Baithak',
+    artist: 'Khayal and tabla artists',
+    city: 'Mumbai',
+    area: 'Dadar',
+    date: '2026-07-06',
+    time: '7:00 PM',
+    venue: 'Baithak Room',
+    type: 'Hindustani',
+    source: 'Curated seed',
+    status: 'Verified'
+  },
+  {
+    id: 'hyd-cross-04',
+    title: 'Classical Crossover Chamber',
+    artist: 'Vocal, veena, and percussion artists',
+    city: 'Hyderabad',
+    area: 'Banjara Hills',
+    date: '2026-07-07',
+    time: '6:00 PM',
+    venue: 'Arts Circle',
+    type: 'Karnatik + Hindustani',
+    source: 'Community seed',
+    status: 'Open'
+  },
+  {
+    id: 'del-dhrupad-05',
+    title: 'Dhrupad Listening Session',
+    artist: 'Dhrupad artists collective',
+    city: 'Delhi',
+    area: 'Mandi House',
+    date: '2026-07-09',
+    time: '6:15 PM',
+    venue: 'Music Forum',
+    type: 'Hindustani',
+    source: 'Community seed',
+    status: 'Open'
+  },
+  {
+    id: 'sfo-diaspora-06',
+    title: 'Indian Classical Community Night',
+    artist: 'Bay Area musicians',
+    city: 'San Francisco Bay Area',
+    area: 'Fremont',
     date: '2026-07-10',
     time: '6:30 PM',
-    venue: 'Raga Sudha Hall',
-    type: 'Karnatik',
-    source: 'Beta listing'
+    venue: 'Community Arts Center',
+    type: 'Karnatik + Hindustani',
+    source: 'Community seed',
+    status: 'Open'
   }
 ];
 const roadmapColumns = [
@@ -1694,28 +1700,47 @@ function KarnatikRagasPage() {
 }
 
 function ConcertsPage() {
-  const [place, setPlace] = useState('Bangalore');
-  const [geoStatus, setGeoStatus] = useState('Enter a city or use your browser location.');
-  const normalizedPlace = place.trim().toLowerCase();
-  const nearbyAliases = {
-    bengaluru: 'bangalore',
-    bangalore: 'bangalore',
-    melkote: 'melkote',
-    mailkote: 'melkote',
-    mysuru: 'mysore',
-    mysore: 'mysore',
-    chennai: 'chennai',
-    madras: 'chennai'
-  };
-  const cityKey = nearbyAliases[normalizedPlace] || normalizedPlace;
-  const visibleConcerts = useMemo(() => {
-    if (!cityKey) return concertListings;
-    const directMatches = concertListings.filter((event) => event.city.toLowerCase() === cityKey);
-    if (cityKey === 'melkote' || cityKey === 'mailkote') {
-      return directMatches.concat(concertListings.filter((event) => event.city === 'Bangalore' || event.city === 'Mysore'));
+  const [search, setSearch] = useState('');
+  const [geoStatus, setGeoStatus] = useState('Search any city, venue, artist, sabha, or raga event.');
+  const [showSubmit, setShowSubmit] = useState(false);
+  const [savedIds, setSavedIds] = useState([]);
+  const [submittedEvents, setSubmittedEvents] = useState(() => {
+    try {
+      return JSON.parse(window.localStorage.getItem('karnatik-community-concerts') || '[]');
+    } catch {
+      return [];
     }
-    return directMatches.length ? directMatches : concertListings.filter((event) => event.city === 'Bangalore');
-  }, [cityKey]);
+  });
+  const [eventDraft, setEventDraft] = useState({
+    title: '',
+    artist: '',
+    city: '',
+    area: '',
+    venue: '',
+    date: '',
+    time: '',
+    type: 'Karnatik'
+  });
+  const allConcerts = useMemo(() => [...submittedEvents, ...concertListings], [submittedEvents]);
+  const visibleConcerts = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return allConcerts;
+    return allConcerts.filter((event) => {
+      const haystack = [
+        event.title,
+        event.artist,
+        event.city,
+        event.area,
+        event.venue,
+        event.type,
+        event.source,
+        event.status
+      ].join(' ').toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [allConcerts, search]);
+  const openEvents = allConcerts.filter((event) => event.status !== 'Verified').length;
+  const cityCount = new Set(allConcerts.map((event) => event.city)).size;
 
   function useCurrentLocation() {
     if (!navigator.geolocation) {
@@ -1727,92 +1752,178 @@ function ConcertsPage() {
       (position) => {
         const { latitude, longitude } = position.coords;
         if (latitude > 12.55 && latitude < 12.8 && longitude > 76.5 && longitude < 76.8) {
-          setPlace('Melkote');
-          setGeoStatus('Location matched near Melkote. Showing nearby listings too.');
+          setSearch('Melkote');
+          setGeoStatus('Location matched near Melkote.');
           return;
         }
         if (latitude > 12.75 && latitude < 13.25 && longitude > 77.35 && longitude < 77.9) {
-          setPlace('Bangalore');
+          setSearch('Bangalore');
           setGeoStatus('Location matched near Bangalore.');
           return;
         }
         if (latitude > 12.1 && latitude < 12.45 && longitude > 76.45 && longitude < 76.85) {
-          setPlace('Mysore');
+          setSearch('Mysore');
           setGeoStatus('Location matched near Mysore.');
           return;
         }
         if (latitude > 12.8 && latitude < 13.25 && longitude > 80.05 && longitude < 80.35) {
-          setPlace('Chennai');
+          setSearch('Chennai');
           setGeoStatus('Location matched near Chennai.');
           return;
         }
-        setGeoStatus(`Location captured: ${latitude.toFixed(2)}, ${longitude.toFixed(2)}. Showing Bangalore beta listings.`);
+        setGeoStatus(`Location captured: ${latitude.toFixed(2)}, ${longitude.toFixed(2)}. Search by your nearest city or add a local event.`);
       },
       () => setGeoStatus('Location permission was not granted. Enter your city manually.')
     );
   }
 
+  function updateDraft(field, value) {
+    setEventDraft((current) => ({ ...current, [field]: value }));
+  }
+
+  function submitConcert(event) {
+    event.preventDefault();
+    const nextEvent = {
+      id: `community-${Date.now()}`,
+      ...eventDraft,
+      source: 'Community submission',
+      status: 'Pending review'
+    };
+    const nextEvents = [nextEvent, ...submittedEvents];
+    setSubmittedEvents(nextEvents);
+    window.localStorage.setItem('karnatik-community-concerts', JSON.stringify(nextEvents));
+    setSearch(nextEvent.city || nextEvent.title);
+    setGeoStatus('Event added to the community review queue.');
+    setShowSubmit(false);
+    setEventDraft({
+      title: '',
+      artist: '',
+      city: '',
+      area: '',
+      venue: '',
+      date: '',
+      time: '',
+      type: 'Karnatik'
+    });
+  }
+
+  function toggleSaved(eventId) {
+    setSavedIds((current) => current.includes(eventId) ? current.filter((id) => id !== eventId) : [...current, eventId]);
+  }
+
   return (
     <section className="raga-pane concerts-page">
       <div className="concerts-hero">
-        <span>Indian Music Concert Finder</span>
-        <h1>Find Concerts Near You</h1>
-        <p>Discover upcoming Karnatik and Hindustani concerts by city, town, or current location.</p>
+        <span>Karnatik.ai Concert Mall</span>
+        <h1>Discover and publish Indian music concerts anywhere.</h1>
+        <p>A living calendar for Karnatik, Hindustani, sabhas, baithaks, temple events, workshops, and community concerts.</p>
       </div>
 
       <div className="concert-search-panel">
         <label>
-          <MapPin size={18} />
+          <Search size={18} />
           <input
-            value={place}
-            onChange={(event) => setPlace(event.target.value)}
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
             onFocus={(event) => event.target.select()}
-            placeholder="Enter city, town, or village"
+            placeholder="Search any place, artist, venue, sabha, or concert"
           />
         </label>
         <button onClick={useCurrentLocation}><Navigation size={17} /> Use My Location</button>
-      </div>
-      <div className="concert-city-chips">
-        {['Bangalore', 'Melkote', 'Mysore', 'Chennai'].map((city) => (
-          <button key={city} className={place === city ? 'active' : ''} onClick={() => setPlace(city)}>{city}</button>
-        ))}
+        <button className="submit-concert-button" onClick={() => setShowSubmit((current) => !current)}><Plus size={17} /> Add Concert</button>
       </div>
       <p className="concert-status">{geoStatus}</p>
+
+      {showSubmit && (
+        <form className="concert-submit-panel" onSubmit={submitConcert}>
+          <label>
+            Concert title
+            <input value={eventDraft.title} onChange={(event) => updateDraft('title', event.target.value)} placeholder="Evening raga concert" required />
+          </label>
+          <label>
+            Artist / organizer
+            <input value={eventDraft.artist} onChange={(event) => updateDraft('artist', event.target.value)} placeholder="Artist, sabha, or school" required />
+          </label>
+          <label>
+            City / place
+            <input value={eventDraft.city} onChange={(event) => updateDraft('city', event.target.value)} placeholder="Any city, town, or village" required />
+          </label>
+          <label>
+            Area
+            <input value={eventDraft.area} onChange={(event) => updateDraft('area', event.target.value)} placeholder="Neighbourhood or locality" />
+          </label>
+          <label>
+            Venue
+            <input value={eventDraft.venue} onChange={(event) => updateDraft('venue', event.target.value)} placeholder="Hall, temple, school, or online" required />
+          </label>
+          <label>
+            Date
+            <input type="date" value={eventDraft.date} onChange={(event) => updateDraft('date', event.target.value)} required />
+          </label>
+          <label>
+            Time
+            <input type="time" value={eventDraft.time} onChange={(event) => updateDraft('time', event.target.value)} required />
+          </label>
+          <label>
+            Tradition
+            <select value={eventDraft.type} onChange={(event) => updateDraft('type', event.target.value)}>
+              <option>Karnatik</option>
+              <option>Hindustani</option>
+              <option>Karnatik + Hindustani</option>
+              <option>Workshop</option>
+              <option>Festival</option>
+            </select>
+          </label>
+          <button type="submit"><Send size={16} /> Submit for Review</button>
+        </form>
+      )}
 
       <div className="concert-source-row">
         <article>
           <span>Listings</span>
-          <strong>{visibleConcerts.length}</strong>
+          <strong>{allConcerts.length}</strong>
         </article>
         <article>
-          <span>Source Mode</span>
-          <strong>Beta</strong>
+          <span>Places</span>
+          <strong>{cityCount}</strong>
         </article>
         <article>
-          <span>Next Feed</span>
-          <strong>Verified</strong>
+          <span>Community Queue</span>
+          <strong>{openEvents}</strong>
         </article>
       </div>
 
       <div className="concert-grid">
-        {visibleConcerts.map((event) => (
-          <article key={event.id} className="concert-card">
-            <div>
-              <span>{event.type}</span>
-              <strong>{event.title}</strong>
-              <p>{event.artist}</p>
-            </div>
-            <div className="concert-meta">
-              <p><CalendarDays size={15} /> {formatConcertDate(event.date)} · {event.time}</p>
-              <p><MapPin size={15} /> {event.venue}, {event.area}, {event.city}</p>
-            </div>
-            <div className="concert-actions">
-              <button><Ticket size={15} /> Save</button>
-              <button>Details</button>
-              <small>{event.source}</small>
-            </div>
+        {visibleConcerts.length ? (
+          visibleConcerts.map((event) => (
+            <article key={event.id} className="concert-card">
+              <div>
+                <span>{event.type}</span>
+                <strong>{event.title}</strong>
+                <p>{event.artist}</p>
+              </div>
+              <div className="concert-meta">
+                <p><CalendarDays size={15} /> {formatConcertDate(event.date)} · {formatConcertTime(event.time)}</p>
+                <p><MapPin size={15} /> {event.venue}, {event.area ? `${event.area}, ` : ''}{event.city}</p>
+              </div>
+              <div className="concert-actions">
+                <button onClick={() => toggleSaved(event.id)}><Ticket size={15} /> {savedIds.includes(event.id) ? 'Saved' : 'Save'}</button>
+                <button onClick={() => downloadConcertCalendar(event)}>Calendar</button>
+                <small>{event.status || event.source}</small>
+              </div>
+            </article>
+          ))
+        ) : (
+          <article className="concert-empty">
+            <span>No listing yet</span>
+            <strong>Make this city visible.</strong>
+            <p>Add the first concert for “{search}” and help build the Indian music calendar.</p>
+            <button onClick={() => {
+              setShowSubmit(true);
+              updateDraft('city', search);
+            }}>Add Concert</button>
           </article>
-        ))}
+        )}
       </div>
     </section>
   );
@@ -2356,6 +2467,63 @@ function chordSuffix(quality) {
 
 function formatConcertDate(value) {
   return new Intl.DateTimeFormat('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(`${value}T12:00:00`));
+}
+
+function formatConcertTime(value) {
+  if (!value) return 'Time TBA';
+  if (/[ap]m/i.test(value)) return value;
+  const [hours, minutes] = value.split(':').map(Number);
+  if (Number.isNaN(hours)) return value;
+  return new Intl.DateTimeFormat('en-IN', { hour: 'numeric', minute: '2-digit' }).format(new Date(2026, 0, 1, hours, minutes || 0));
+}
+
+function calendarDateStamp(date, time) {
+  const [hours, minutes] = /[ap]m/i.test(time || '')
+    ? parseDisplayTime(time)
+    : (time || '18:00').split(':').map(Number);
+  const start = new Date(`${date || new Date().toISOString().slice(0, 10)}T${String(hours || 18).padStart(2, '0')}:${String(minutes || 0).padStart(2, '0')}:00`);
+  const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+  const stamp = (nextDate) => nextDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  return { start: stamp(start), end: stamp(end) };
+}
+
+function parseDisplayTime(value) {
+  const match = String(value || '').match(/(\d{1,2})(?::(\d{2}))?\s*([ap]m)/i);
+  if (!match) return [18, 0];
+  let hours = Number(match[1]);
+  const minutes = Number(match[2] || 0);
+  const meridian = match[3].toLowerCase();
+  if (meridian === 'pm' && hours < 12) hours += 12;
+  if (meridian === 'am' && hours === 12) hours = 0;
+  return [hours, minutes];
+}
+
+function downloadConcertCalendar(event) {
+  const { start, end } = calendarDateStamp(event.date, event.time);
+  const safe = (value) => String(value || '').replace(/[,\n]/g, ' ').trim();
+  const ics = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Karnatik.ai//Concert Calendar//EN',
+    'BEGIN:VEVENT',
+    `UID:${event.id}@karnatik.ai`,
+    `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
+    `DTSTART:${start}`,
+    `DTEND:${end}`,
+    `SUMMARY:${safe(event.title)}`,
+    `DESCRIPTION:${safe(`${event.artist} · ${event.type}`)}`,
+    `LOCATION:${safe(`${event.venue}, ${event.area || ''}, ${event.city}`)}`,
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].join('\r\n');
+  const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${event.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'karnatik-concert'}.ics`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 function swaraFrequency(swara, root, octave = 4) {
