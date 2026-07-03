@@ -228,17 +228,20 @@ const concertListings = [
 const concertSourceRoadmap = [
   {
     name: 'Community submissions',
-    status: 'Prototype ready',
+    status: 'ready',
+    count: 0,
     detail: 'Teachers, sabhas, artists, and rasikas can add concerts directly.'
   },
   {
     name: 'Verified partner calendars',
-    status: 'Next',
+    status: 'next',
+    count: 0,
     detail: 'Sabhas, venues, festivals, and artist websites can feed reviewed listings.'
   },
   {
     name: 'Public event discovery',
-    status: 'Planned',
+    status: 'planned',
+    count: 0,
     detail: 'Search-backed discovery will need a backend crawler, moderation, and duplicate checks.'
   }
 ];
@@ -1714,9 +1717,14 @@ function KarnatikRagasPage() {
 
 function ConcertsPage() {
   const [search, setSearch] = useState('');
-  const [geoStatus, setGeoStatus] = useState('Search any city, venue, artist, sabha, or raga event.');
+  const [geoStatus, setGeoStatus] = useState('Loading verified concert sources...');
   const [showSubmit, setShowSubmit] = useState(false);
   const [savedIds, setSavedIds] = useState([]);
+  const [liveEvents, setLiveEvents] = useState([]);
+  const [sourceStatuses, setSourceStatuses] = useState([]);
+  const [concertLoading, setConcertLoading] = useState(true);
+  const [concertError, setConcertError] = useState('');
+  const [lastUpdated, setLastUpdated] = useState('');
   const [submittedEvents, setSubmittedEvents] = useState(() => {
     try {
       return JSON.parse(window.localStorage.getItem('karnatik-community-concerts') || '[]');
@@ -1734,7 +1742,8 @@ function ConcertsPage() {
     time: '',
     type: 'Karnatik'
   });
-  const allConcerts = useMemo(() => [...submittedEvents, ...concertListings], [submittedEvents]);
+  const sourceEvents = liveEvents.length ? liveEvents : concertListings;
+  const allConcerts = useMemo(() => [...submittedEvents, ...sourceEvents], [submittedEvents, sourceEvents]);
   const visibleConcerts = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return allConcerts;
@@ -1752,8 +1761,40 @@ function ConcertsPage() {
       return haystack.includes(query);
     });
   }, [allConcerts, search]);
-  const openEvents = allConcerts.filter((event) => event.status !== 'Verified').length;
+  const openEvents = submittedEvents.length;
   const cityCount = new Set(allConcerts.map((event) => event.city)).size;
+  const liveSourceCount = sourceStatuses.filter((source) => source.status === 'live').length;
+  const sourceTiles = sourceStatuses.length ? sourceStatuses : concertSourceRoadmap;
+
+  useEffect(() => {
+    let isActive = true;
+    async function loadConcerts() {
+      setConcertLoading(true);
+      setConcertError('');
+      try {
+        const response = await fetch(`/api/concerts?ts=${Date.now()}`);
+        if (!response.ok) throw new Error('Concert source API did not respond.');
+        const payload = await response.json();
+        if (!isActive) return;
+        setLiveEvents(Array.isArray(payload.events) ? payload.events : []);
+        setSourceStatuses(Array.isArray(payload.sources) ? payload.sources : []);
+        setLastUpdated(payload.generatedAt || new Date().toISOString());
+        setGeoStatus(payload.fallback ? 'Live sources were unavailable, showing fallback listings.' : 'Live concert sources loaded. Search any place, artist, venue, sabha, or concert.');
+      } catch (error) {
+        if (!isActive) return;
+        setConcertError(error.message);
+        setLiveEvents([]);
+        setSourceStatuses([]);
+        setGeoStatus('Live concert API is not available in this environment. Showing prototype seed listings.');
+      } finally {
+        if (isActive) setConcertLoading(false);
+      }
+    }
+    loadConcerts();
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   function useCurrentLocation() {
     if (!navigator.geolocation) {
@@ -1828,8 +1869,8 @@ function ConcertsPage() {
     <section className="raga-pane concerts-page">
       <div className="concerts-hero">
         <span>Karnatik.ai Concert Mall</span>
-        <h1>Build the living concert calendar for Indian music.</h1>
-        <p>This prototype starts with sample listings and community submissions. Live internet and partner-calendar ingestion will come through the backend pipeline.</p>
+        <h1>Find Indian music concerts across cities and communities.</h1>
+        <p>Live source connectors, partner calendars, and community submissions come together as one searchable Indian music calendar.</p>
       </div>
 
       <div className="concert-search-panel">
@@ -1843,9 +1884,14 @@ function ConcertsPage() {
           />
         </label>
         <button onClick={useCurrentLocation}><Navigation size={17} /> Use My Location</button>
+        <button onClick={() => window.location.reload()}><Search size={17} /> Refresh Sources</button>
         <button className="submit-concert-button" onClick={() => setShowSubmit((current) => !current)}><Plus size={17} /> Add Concert</button>
       </div>
-      <p className="concert-status">{geoStatus}</p>
+      <p className="concert-status">
+        {concertLoading ? 'Fetching live concert sources...' : geoStatus}
+        {lastUpdated ? ` Last checked ${new Date(lastUpdated).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}.` : ''}
+        {concertError ? ` ${concertError}` : ''}
+      </p>
 
       {showSubmit && (
         <form className="concert-submit-panel" onSubmit={submitConcert}>
@@ -1893,12 +1939,16 @@ function ConcertsPage() {
 
       <div className="concert-source-row">
         <article>
-          <span>Sample Listings</span>
+          <span>{liveEvents.length ? 'Live Listings' : 'Seed Listings'}</span>
           <strong>{allConcerts.length}</strong>
         </article>
         <article>
           <span>Places</span>
           <strong>{cityCount}</strong>
+        </article>
+        <article>
+          <span>Live Sources</span>
+          <strong>{liveSourceCount}</strong>
         </article>
         <article>
           <span>Community Queue</span>
@@ -1907,11 +1957,11 @@ function ConcertsPage() {
       </div>
 
       <div className="concert-source-roadmap">
-        {concertSourceRoadmap.map((source) => (
-          <article key={source.name}>
-            <span>{source.status}</span>
+        {sourceTiles.map((source) => (
+          <article key={source.id || source.name}>
+            <span>{source.status}{typeof source.count === 'number' ? ` · ${source.count}` : ''}</span>
             <strong>{source.name}</strong>
-            <p>{source.detail}</p>
+            <p>{source.detail || source.coverage}</p>
           </article>
         ))}
       </div>
@@ -1932,6 +1982,7 @@ function ConcertsPage() {
               <div className="concert-actions">
                 <button onClick={() => toggleSaved(event.id)}><Ticket size={15} /> {savedIds.includes(event.id) ? 'Saved' : 'Save'}</button>
                 <button onClick={() => downloadConcertCalendar(event)}>Calendar</button>
+                {event.sourceUrl ? <a href={event.sourceUrl} target="_blank" rel="noreferrer">Source</a> : null}
                 <small>{event.status || event.source}</small>
               </div>
             </article>

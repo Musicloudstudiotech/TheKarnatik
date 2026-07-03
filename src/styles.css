@@ -1634,7 +1634,7 @@ h3 {
 
 .concert-source-row {
   display: grid;
-  grid-template-columns: repeat(3, minmax(130px, 1fr));
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
   gap: 12px;
   margin-bottom: 16px;
 }
@@ -1760,17 +1760,28 @@ h3 {
 
 .concert-actions {
   display: grid;
-  grid-template-columns: auto auto 1fr;
+  grid-template-columns: auto auto auto 1fr;
   align-items: center;
   gap: 8px;
 }
 
-.concert-actions button {
+.concert-actions button,
+.concert-actions a {
   min-height: 36px;
   padding: 0 12px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--teal-dark);
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 800;
+  justify-content: center;
+  text-decoration: none;
 }
 
-.concert-actions button + button {
+.concert-actions button + button,
+.concert-actions a {
   background: transparent;
   color: var(--teal);
 }
@@ -3306,6 +3317,7 @@ input[type="range"] {
     grid-template-columns: repeat(2, minmax(220px, 1fr));
   }
 
+  .concert-source-row,
   .concert-source-roadmap,
   .concert-grid {
     grid-template-columns: 1fr;
