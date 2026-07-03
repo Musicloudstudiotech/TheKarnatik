@@ -679,6 +679,7 @@ function App({ user, onSignOut }) {
   async function askCompanion(promptText) {
     const question = String(promptText || companionInput).trim();
     if (!question || companionLoading) return;
+    const companionRaga = findMentionedRaga(question, selected) || selected;
 
     const nextMessages = [...companionMessages, { role: 'user', content: question }];
     setCompanionMessages(nextMessages);
@@ -694,13 +695,13 @@ function App({ user, onSignOut }) {
           question,
           history: companionMessages,
           raga: {
-            name: selected.name,
-            system: selected.system,
-            family: selected.family,
-            arohana: selected.arohana,
-            avarohana: selected.avarohana,
-            pakad: selected.pakad,
-            notes: selected.notes
+            name: companionRaga.name,
+            system: companionRaga.system,
+            family: companionRaga.family,
+            arohana: companionRaga.arohana,
+            avarohana: companionRaga.avarohana,
+            pakad: companionRaga.pakad,
+            notes: companionRaga.notes
           }
         })
       });
@@ -714,7 +715,7 @@ function App({ user, onSignOut }) {
       setCompanionError(error.message);
       setCompanionMessages((current) => [...current, {
         role: 'assistant',
-        content: `I could not reach the AI engine right now. For ${selected.name}, start with ${selected.pakad}`
+        content: `I could not reach the AI engine right now. For ${companionRaga.name}, start with ${companionRaga.pakad}`
       }]);
     } finally {
       setCompanionLoading(false);
@@ -2464,6 +2465,26 @@ function summarizeHeardIntervals(heard) {
   return Object.entries(counts)
     .map(([interval, count]) => ({ interval: Number(interval), swara: intervalLabels[Number(interval)], count }))
     .sort((a, b) => a.interval - b.interval);
+}
+
+function normalizeRagaSearchText(value = '') {
+  return String(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function findMentionedRaga(question, fallbackRaga) {
+  const normalizedQuestion = ` ${normalizeRagaSearchText(question)} `;
+  const candidates = ragas
+    .flatMap((raga) => [raga.name, ...(raga.name || '').split('/').map((part) => part.trim())]
+      .filter(Boolean)
+      .map((name) => ({ raga, name: normalizeRagaSearchText(name) }))
+      .filter((candidate) => candidate.name.length >= 3))
+    .sort((a, b) => b.name.length - a.name.length);
+
+  const match = candidates.find((candidate) => normalizedQuestion.includes(` ${candidate.name} `));
+  return match?.raga || fallbackRaga;
 }
 
 function ragaIntervals(raga) {

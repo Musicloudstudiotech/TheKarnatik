@@ -136,5 +136,9 @@ function buildFallbackAnswer(question, raga) {
     return `${name}: Arohana is ${arohana}. Avarohana is ${avarohana}. Use these as the clean scale skeleton before adding gamaka and phrase grammar.`;
   }
 
+  if (lower.includes('speak') || lower.includes('tell') || lower.includes('about') || lower.includes('explain')) {
+    return `${name} belongs to ${raga.family || 'its raga family'}. Its Arohana is ${arohana}, and Avarohana is ${avarohana}. The identity phrase is ${pakad}. ${raga.notes || 'Sing slowly first, then add phrase grammar and gamaka with care.'}`;
+  }
+
   return `For ${name}, start with the raga skeleton: ${arohana} / ${avarohana}. Then work on this identity phrase: ${pakad}. Add one short question and I can guide the next practice step.`;
 }
