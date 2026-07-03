@@ -27,9 +27,9 @@ module.exports = async function handler(req, res) {
     }
 
     if (!process.env.OPENAI_API_KEY) {
-      res.status(200).json({
-        answer: buildFallbackAnswer(question, raga),
-        mode: 'fallback'
+      res.status(503).json({
+        error: 'AI engine is not connected. Add OPENAI_API_KEY in Vercel Environment Variables.',
+        mode: 'not_configured'
       });
       return;
     }
@@ -79,14 +79,14 @@ module.exports = async function handler(req, res) {
 
     const data = await response.json();
     res.status(200).json({
-      answer: data.output_text || extractOutputText(data) || buildFallbackAnswer(question, raga),
+      answer: data.output_text || extractOutputText(data) || 'I could not produce an answer from the AI engine.',
       mode: 'openai'
     });
   } catch (error) {
-    res.status(200).json({
-      answer: buildFallbackAnswer('', {}),
-      mode: 'fallback',
-      error: error.message
+    res.status(500).json({
+      error: error.message,
+      mode: 'error',
+      answer: 'The AI engine could not respond right now.'
     });
   }
 };
@@ -115,30 +115,4 @@ function extractOutputText(data) {
     .map((part) => part.text || '')
     .join('\n')
     .trim();
-}
-
-function buildFallbackAnswer(question, raga) {
-  const name = raga.name || 'this raga';
-  const arohana = (raga.arohana || []).join(' ') || 'Arohana needs to be added.';
-  const avarohana = (raga.avarohana || []).join(' ') || 'Avarohana needs to be added.';
-  const pakad = raga.pakad || 'Start from the core swara pattern, then slow down around the raga identity notes.';
-  const lower = question.toLowerCase();
-
-  if (lower.includes('practice') || lower.includes('lesson')) {
-    return `For ${name}, do a 12-minute loop: first sing Sa-Pa-Sa for shruthi, then Arohana slowly: ${arohana}. Next sing Avarohana: ${avarohana}. Finish with the signature phrase: ${pakad}`;
-  }
-
-  if (lower.includes('pakad') || lower.includes('phrase')) {
-    return `${name}'s current signature phrase is: ${pakad}. Sing it slowly first, then repeat only the turning point until the raga color feels natural.`;
-  }
-
-  if (lower.includes('scale') || lower.includes('arohana') || lower.includes('avarohana')) {
-    return `${name}: Arohana is ${arohana}. Avarohana is ${avarohana}. Use these as the clean scale skeleton before adding gamaka and phrase grammar.`;
-  }
-
-  if (lower.includes('speak') || lower.includes('tell') || lower.includes('about') || lower.includes('explain')) {
-    return `${name} belongs to ${raga.family || 'its raga family'}. Its Arohana is ${arohana}, and Avarohana is ${avarohana}. The identity phrase is ${pakad}. ${raga.notes || 'Sing slowly first, then add phrase grammar and gamaka with care.'}`;
-  }
-
-  return `For ${name}, start with the raga skeleton: ${arohana} / ${avarohana}. Then work on this identity phrase: ${pakad}. Add one short question and I can guide the next practice step.`;
 }

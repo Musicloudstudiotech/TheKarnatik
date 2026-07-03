@@ -712,10 +712,11 @@ function App({ user, onSignOut }) {
         content: payload.answer || 'I am here, but I could not form a useful answer yet.'
       }]);
     } catch (error) {
-      setCompanionError(error.message);
+      const engineMessage = error.message || 'AI engine is not connected.';
+      setCompanionError(engineMessage);
       setCompanionMessages((current) => [...current, {
         role: 'assistant',
-        content: `I could not reach the AI engine right now. For ${companionRaga.name}, start with ${companionRaga.pakad}`
+        content: engineMessage
       }]);
     } finally {
       setCompanionLoading(false);
