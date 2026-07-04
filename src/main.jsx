@@ -1228,7 +1228,8 @@ function App({ user, onSignOut }) {
       return;
     }
 
-    const matches = matchRagas(heardSwaras.map((item) => item.interval), shyamPilotRagas);
+    const heardSequence = compactHeardIntervalSequence(session.heard);
+    const matches = matchRagas(heardSwaras.map((item) => item.interval), shyamPilotRagas, heardSequence);
     const confirmedMatch = matches.find((match) => match.strong);
     const tooManySwaras = heardSwaras.length > 8;
     setRagaDetector({
@@ -1248,6 +1249,7 @@ function App({ user, onSignOut }) {
         `Sa detected from your voice: ${session.root}.`,
         'Compared only against Shyam 20 recorded baseline.',
         `Heard swaras: ${heardSwaras.map((item) => item.swara).join(' ')}.`,
+        `Heard scale path: ${heardSequence.map((interval) => intervalLabels[interval]).join(' ') || 'not enough ordered notes'}.`,
         confirmedMatch ? `Top match: ${confirmedMatch.name} at ${confirmedMatch.score}%.` : 'No confident raga match. Hold Sa first, then sing the scale one note at a time.'
       ],
       error: ''
@@ -1575,7 +1577,7 @@ function App({ user, onSignOut }) {
                   <button key={match.id} onClick={() => match.ragaId && setSelectedId(match.ragaId)}>
                     <strong>{match.name}</strong>
                     <span>{match.score}% {match.strong ? 'match' : 'possible only'} · Shyam 20 baseline</span>
-                    <small>Matched: {match.matched.join(' ') || 'none'} · Missing: {match.missing.join(' ') || 'none'} · Signature missing: {match.signatureMissing.join(' ') || 'none'} · Extra: {match.extra.join(' ') || 'none'}</small>
+                    <small>Path: {match.sequenceScore}% · Matched: {match.matched.join(' ') || 'none'} · Missing: {match.missing.join(' ') || 'none'} · Signature missing: {match.signatureMissing.join(' ') || 'none'} · Extra: {match.extra.join(' ') || 'none'}</small>
                   </button>
                 ))}
               </div>
@@ -2767,6 +2769,14 @@ function ragaIntervals(raga) {
     .map((swara) => swaraIntervals[swara]);
 }
 
+function ragaIntervalSequence(raga) {
+  return raga.arohana
+    .concat(raga.avarohana)
+    .map(normalizeSwara)
+    .filter((swara) => swaraIntervals[swara] !== undefined)
+    .map((swara) => swaraIntervals[swara]);
+}
+
 function ragaSignatureIntervals(raga) {
   const signatures = {
     yaman: [2, 4, 6, 11],
@@ -2793,31 +2803,75 @@ function ragaSignatureIntervals(raga) {
   return signatures[raga.id] || [];
 }
 
-function matchRagas(heardIntervals, candidates = ragas) {
+function compactHeardIntervalSequence(heard) {
+  const runs = [];
+  heard.forEach((item) => {
+    const last = runs[runs.length - 1];
+    if (last && last.interval === item.interval) {
+      last.count += 1;
+      return;
+    }
+    runs.push({ interval: item.interval, count: 1 });
+  });
+
+  return runs
+    .filter((run) => run.count >= 2)
+    .map((run) => run.interval)
+    .filter((interval, index, list) => index === 0 || interval !== list[index - 1]);
+}
+
+function longestCommonSubsequenceLength(source, target) {
+  if (!source.length || !target.length) return 0;
+  const previous = Array(target.length + 1).fill(0);
+  const current = Array(target.length + 1).fill(0);
+  source.forEach((sourceItem) => {
+    for (let targetIndex = 1; targetIndex <= target.length; targetIndex += 1) {
+      current[targetIndex] = sourceItem === target[targetIndex - 1]
+        ? previous[targetIndex - 1] + 1
+        : Math.max(previous[targetIndex], current[targetIndex - 1]);
+    }
+    for (let index = 0; index <= target.length; index += 1) {
+      previous[index] = current[index];
+      current[index] = 0;
+    }
+  });
+  return previous[target.length];
+}
+
+function matchRagas(heardIntervals, candidates = ragas, heardSequence = []) {
   const heardSet = new Set(heardIntervals);
   return candidates
     .map((raga) => {
       const target = ragaIntervals(raga);
       const targetSet = new Set(target);
+      const targetSequence = ragaIntervalSequence(raga);
       const signature = raga.signatureIntervals || ragaSignatureIntervals(raga);
       const matched = target.filter((interval) => heardSet.has(interval));
       const missing = target.filter((interval) => !heardSet.has(interval));
       const extra = [...heardSet].filter((interval) => !targetSet.has(interval));
       const signatureMissing = signature.filter((interval) => !heardSet.has(interval));
       const coverage = matched.length / target.length;
+      const sequenceCoverage = heardSequence.length >= 5
+        ? longestCommonSubsequenceLength(heardSequence, targetSequence) / Math.max(targetSequence.length, 1)
+        : 0;
       const missingPenalty = missing.length / target.length;
       const extraPenalty = extra.length / Math.max(target.length, 1);
       const sparsePenalty = heardSet.size < 4 ? 0.18 : 0;
       const signaturePenalty = signature.length ? (signatureMissing.length / signature.length) * 0.36 : 0;
       const chromaticPenalty = heardSet.size > 8 ? 0.35 : 0;
-      const score = Math.max(0, Math.round((coverage - missingPenalty * 0.2 - extraPenalty * 1.05 - sparsePenalty - signaturePenalty - chromaticPenalty) * 100));
-      const strong = score >= 88 && extra.length <= 1 && missing.length <= 1 && heardSet.size >= Math.min(5, target.length) && signatureMissing.length === 0;
+      const orderedWeight = heardSequence.length >= 5 ? 0.45 : 0.15;
+      const unorderedWeight = 1 - orderedWeight;
+      const sequencePenalty = heardSequence.length >= 5 ? Math.max(0, 0.82 - sequenceCoverage) * 0.35 : 0.12;
+      const blendedCoverage = coverage * unorderedWeight + sequenceCoverage * orderedWeight;
+      const score = Math.max(0, Math.round((blendedCoverage - missingPenalty * 0.2 - extraPenalty * 1.05 - sparsePenalty - signaturePenalty - chromaticPenalty - sequencePenalty) * 100));
+      const strong = score >= 88 && sequenceCoverage >= 0.9 && extra.length <= 1 && missing.length <= 1 && heardSet.size >= Math.min(5, target.length) && signatureMissing.length === 0;
       return {
         id: raga.id,
         ragaId: raga.ragaId || raga.id,
         name: raga.name,
         system: raga.system,
         score,
+        sequenceScore: Math.round(sequenceCoverage * 100),
         strong,
         matched: matched.map((interval) => intervalLabels[interval]),
         missing: missing.map((interval) => intervalLabels[interval]),
