@@ -269,6 +269,125 @@ const shyamRecordedSamples = [
   { id: 'shyam-todi', ragaId: 'todi', name: 'Todi', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Todi-CSharp.mp3' }
 ];
 
+const shyamPilotScales = {
+  Abheri: {
+    arohana: ['S', 'G2', 'M1', 'P', 'N2', "S'"],
+    avarohana: ["S'", 'N2', 'D2', 'P', 'M1', 'G2', 'R2', 'S'],
+    signature: ['G2', 'N2', 'D2']
+  },
+  Anandabhairavi: {
+    arohana: ['S', 'G2', 'R2', 'G2', 'M1', 'P', 'D2', 'P', "S'"],
+    avarohana: ["S'", 'N2', 'D2', 'P', 'M1', 'G2', 'R2', 'S'],
+    signature: ['G2', 'D2', 'N2']
+  },
+  Bhairavi: {
+    arohana: ['S', 'R2', 'G2', 'M1', 'P', 'D2', 'N2', "S'"],
+    avarohana: ["S'", 'N2', 'D1', 'P', 'M1', 'G2', 'R2', 'S'],
+    signature: ['G2', 'D1', 'N2']
+  },
+  Bilahari: {
+    arohana: ['S', 'R2', 'G3', 'P', 'D2', "S'"],
+    avarohana: ["S'", 'N3', 'D2', 'P', 'M1', 'G3', 'R2', 'S'],
+    signature: ['G3', 'D2', 'N3']
+  },
+  Charukeshi: {
+    arohana: ['S', 'R2', 'G3', 'M1', 'P', 'D1', 'N2', "S'"],
+    avarohana: ["S'", 'N2', 'D1', 'P', 'M1', 'G3', 'R2', 'S'],
+    signature: ['G3', 'D1', 'N2']
+  },
+  Hamsadhwani: {
+    arohana: ['S', 'R2', 'G3', 'P', 'N3', "S'"],
+    avarohana: ["S'", 'N3', 'P', 'G3', 'R2', 'S'],
+    signature: ['G3', 'N3']
+  },
+  Hindolam: {
+    arohana: ['S', 'G2', 'M1', 'D1', 'N2', "S'"],
+    avarohana: ["S'", 'N2', 'D1', 'M1', 'G2', 'S'],
+    signature: ['G2', 'D1', 'N2']
+  },
+  Kalyani: {
+    arohana: ['S', 'R2', 'G3', 'M2', 'P', 'D2', 'N3', "S'"],
+    avarohana: ["S'", 'N3', 'D2', 'P', 'M2', 'G3', 'R2', 'S'],
+    signature: ['G3', 'M2', 'N3']
+  },
+  Kambhoji: {
+    arohana: ['S', 'R2', 'G3', 'M1', 'P', 'D2', "S'"],
+    avarohana: ["S'", 'N2', 'D2', 'P', 'M1', 'G3', 'R2', 'S'],
+    signature: ['G3', 'D2', 'N2']
+  },
+  Kedaragowla: {
+    arohana: ['S', 'R2', 'M1', 'P', 'N2', "S'"],
+    avarohana: ["S'", 'N2', 'D2', 'P', 'M1', 'G3', 'R2', 'S'],
+    signature: ['M1', 'N2', 'G3']
+  },
+  Keeravani: {
+    arohana: ['S', 'R2', 'G2', 'M1', 'P', 'D1', 'N3', "S'"],
+    avarohana: ["S'", 'N3', 'D1', 'P', 'M1', 'G2', 'R2', 'S'],
+    signature: ['G2', 'D1', 'N3']
+  },
+  Kharaharapriya: {
+    arohana: ['S', 'R2', 'G2', 'M1', 'P', 'D2', 'N2', "S'"],
+    avarohana: ["S'", 'N2', 'D2', 'P', 'M1', 'G2', 'R2', 'S'],
+    signature: ['G2', 'D2', 'N2']
+  },
+  Madhyamavati: {
+    arohana: ['S', 'R2', 'M1', 'P', 'N2', "S'"],
+    avarohana: ["S'", 'N2', 'P', 'M1', 'R2', 'S'],
+    signature: ['M1', 'N2']
+  },
+  Mayamalavagowla: {
+    arohana: ['S', 'R1', 'G3', 'M1', 'P', 'D1', 'N3', "S'"],
+    avarohana: ["S'", 'N3', 'D1', 'P', 'M1', 'G3', 'R1', 'S'],
+    signature: ['R1', 'G3', 'D1', 'N3']
+  },
+  Mohana: {
+    arohana: ['S', 'R2', 'G3', 'P', 'D2', "S'"],
+    avarohana: ["S'", 'D2', 'P', 'G3', 'R2', 'S'],
+    signature: ['G3', 'D2']
+  },
+  Reetigowla: {
+    arohana: ['S', 'G2', 'R2', 'G2', 'M1', 'N2', 'D2', 'M1', 'N2', "S'"],
+    avarohana: ["S'", 'N2', 'D2', 'M1', 'G2', 'M1', 'P', 'M1', 'G2', 'R2', 'S'],
+    signature: ['G2', 'N2', 'D2']
+  },
+  Saveri: {
+    arohana: ['S', 'R1', 'M1', 'P', 'D1', "S'"],
+    avarohana: ["S'", 'N3', 'D1', 'P', 'M1', 'G3', 'R1', 'S'],
+    signature: ['R1', 'D1', 'N3']
+  },
+  Shankarabharanam: {
+    arohana: ['S', 'R2', 'G3', 'M1', 'P', 'D2', 'N3', "S'"],
+    avarohana: ["S'", 'N3', 'D2', 'P', 'M1', 'G3', 'R2', 'S'],
+    signature: ['G3', 'M1', 'N3']
+  },
+  'Shuddha Saveri': {
+    arohana: ['S', 'R2', 'M1', 'P', 'D2', "S'"],
+    avarohana: ["S'", 'D2', 'P', 'M1', 'R2', 'S'],
+    signature: ['M1', 'D2']
+  },
+  Todi: {
+    arohana: ['S', 'R1', 'G2', 'M1', 'P', 'D1', 'N2', "S'"],
+    avarohana: ["S'", 'N2', 'D1', 'P', 'M1', 'G2', 'R1', 'S'],
+    signature: ['R1', 'G2', 'D1', 'N2']
+  }
+};
+
+const shyamPilotRagas = shyamRecordedSamples.map((sample) => {
+  const linkedRaga = sample.ragaId ? ragas.find((raga) => raga.id === sample.ragaId) : null;
+  const template = shyamPilotScales[sample.name] || linkedRaga || {};
+  return {
+    id: sample.id,
+    ragaId: sample.ragaId,
+    name: sample.name,
+    system: linkedRaga?.system || 'Karnatik',
+    family: linkedRaga?.family || 'Shyam 20 pilot baseline',
+    arohana: template.arohana || [],
+    avarohana: template.avarohana || [],
+    signatureIntervals: (template.signature || []).map((swara) => swaraIntervals[swara]).filter((interval) => interval !== undefined),
+    sample
+  };
+});
+
 const roadmapColumns = [
   {
     title: 'Done',
@@ -521,11 +640,12 @@ function App({ user, onSignOut }) {
   const metronomeRef = useRef(null);
   const [ragaDetector, setRagaDetector] = useState({
     status: 'idle',
+    root: '',
     heardNotes: [],
     heardSwaras: [],
     matches: [],
-    stage: 'Ready: sing Arohana first, then Avarohana slowly.',
-    processLog: ['Ready: set your Sa, click Detect Raga, then sing Arohana and Avarohana slowly.'],
+    stage: 'Ready: sing Sa, then Arohana and Avarohana slowly.',
+    processLog: ['Ready: click Detect Raga, sing Sa first, then Arohana and Avarohana slowly.'],
     error: ''
   });
 
@@ -953,11 +1073,12 @@ function App({ user, onSignOut }) {
     try {
       setRagaDetector({
         status: 'listening',
+        root: '',
         heardNotes: [],
         heardSwaras: [],
         matches: [],
-        stage: `Listening using Sa = ${pitch}. Sing Arohana, then Avarohana.`,
-        processLog: ['Mic connected.', `Using ${pitch} as Sa.`, 'Sing Arohana first, then Avarohana slowly. Tap Stop & Identify when done.'],
+        stage: 'Listening. I will lock Sa from your first steady note.',
+        processLog: ['Mic connected.', 'Finding Sa from your first steady note.', 'After Sa, sing Arohana and Avarohana slowly. Tap Stop & Identify when done.'],
         error: ''
       });
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -974,9 +1095,10 @@ function App({ user, onSignOut }) {
         buffer,
         samples: [],
         heard: [],
+        rootSamples: [],
         rafId: 0,
         silentFrames: 0,
-        root: pitch
+        root: ''
       };
       ragaSessionRef.current = session;
 
@@ -986,8 +1108,36 @@ function App({ user, onSignOut }) {
         const frequency = detectPitch(buffer, audioContext.sampleRate);
         if (frequency) {
           const detected = frequencyToNote(frequency);
-          const interval = noteToInterval(detected.note, session.root);
           session.samples.push(frequency);
+
+          if (!session.root) {
+            session.rootSamples.push({ note: detected.note, frequency });
+            const rootNotes = summarizeHeardNotes(session.rootSamples);
+            const candidateRoot = rootNotes[0]?.note || detected.note;
+            if (session.rootSamples.length >= 8) {
+              session.root = candidateRoot;
+              setPitch(candidateRoot);
+            }
+            setRagaDetector((current) => ({
+              ...current,
+              status: 'listening',
+              root: session.root,
+              heardNotes: rootNotes.slice(0, 4),
+              stage: session.root ? `Sa locked as ${session.root}. Continue Arohana and Avarohana.` : `Finding Sa... nearest note ${candidateRoot}. Hold Sa briefly.`,
+              processLog: [
+                'Mic connected.',
+                session.root ? `Sa locked from your voice: ${session.root}.` : `Finding Sa from first note: ${candidateRoot}.`,
+                'Now sing Arohana and Avarohana slowly.',
+                'Tap Stop & Identify when done.'
+              ],
+              error: ''
+            }));
+            session.silentFrames = 0;
+            session.rafId = requestAnimationFrame(tick);
+            return;
+          }
+
+          const interval = noteToInterval(detected.note, session.root);
           session.heard.push({ note: detected.note, frequency, interval });
           session.silentFrames = 0;
           const heardSwaras = summarizeHeardIntervals(session.heard);
@@ -999,7 +1149,8 @@ function App({ user, onSignOut }) {
             stage: `Listening... latest note ${detected.note} = ${intervalLabels[interval]}.`,
             processLog: [
               'Mic connected.',
-              `Using ${session.root} as Sa.`,
+              `Sa locked from your voice: ${session.root}.`,
+              'Comparing against Shyam 20 recorded baseline.',
               `Detected swaras so far: ${heardSwaras.map((item) => item.swara).join(' ') || 'waiting...'}`,
               'Tap Stop & Identify after Arohana and Avarohana.'
             ],
@@ -1014,7 +1165,7 @@ function App({ user, onSignOut }) {
               stage: 'Continue singing. I am waiting for clear notes.',
               processLog: [
                 'Mic connected.',
-                `Using ${session.root} as Sa.`,
+                session.root ? `Sa locked from your voice: ${session.root}.` : 'Still finding Sa from your first steady note.',
                 'Waiting for clear pitch samples.',
                 'Try singing one note at a time with less background noise.'
               ]
@@ -1029,6 +1180,7 @@ function App({ user, onSignOut }) {
       setRagaDetector((current) => ({
         ...current,
         status: 'error',
+        root: '',
         stage: error?.name === 'NotAllowedError' ? 'Microphone permission was blocked.' : 'Could not start raga detection.',
         processLog: [
           error?.name === 'NotAllowedError'
@@ -1050,38 +1202,43 @@ function App({ user, onSignOut }) {
     ragaSessionRef.current = null;
 
     const heardSwaras = summarizeHeardIntervals(session.heard);
-    if (!heardSwaras.length) {
+    if (!session.root || !heardSwaras.length) {
       setRagaDetector({
         status: 'error',
+        root: session.root || '',
         heardNotes: [],
         heardSwaras: [],
         matches: [],
-        stage: `Could not identify the raga yet. Current key/Sa is ${session.root}.`,
+        stage: session.root ? `Could not identify the raga yet. Detected Sa is ${session.root}.` : 'Could not lock Sa yet.',
         processLog: [
           'Mic connected.',
           'Listening stopped by you.',
-          `Key/Sa reference: ${session.root}.`,
-          'I did not get enough stable notes from the Arohana/Avarohana to compare ragas.'
+          session.root ? `Detected Sa from voice: ${session.root}.` : 'I could not lock a stable Sa from the first note.',
+          'I did not get enough stable Arohana/Avarohana notes to compare against Shyam 20.'
         ],
-        error: `Key detected/selected: ${session.root}. Raga not detected yet. Try singing clear Arohana and Avarohana slowly.`
+        error: session.root
+          ? `Sa detected: ${session.root}. Raga not detected yet. Try singing clear Arohana and Avarohana slowly.`
+          : 'Sa not detected yet. Start with a steady Sa, then sing the scale.'
       });
       return;
     }
 
-    const matches = matchRagas(heardSwaras.map((item) => item.interval));
+    const matches = matchRagas(heardSwaras.map((item) => item.interval), shyamPilotRagas);
     const confirmedMatch = matches.find((match) => match.strong);
     setRagaDetector({
       status: 'detected',
+      root: session.root,
       heardNotes: summarizeHeardNotes(session.heard).slice(0, 6),
       heardSwaras,
       matches,
       stage: confirmedMatch
-        ? `Likely raga: ${confirmedMatch.name} (${confirmedMatch.score}%).`
-        : `Could not identify the raga yet. Current key/Sa is ${session.root}.`,
+        ? `Likely raga: ${confirmedMatch.name} (${confirmedMatch.score}%) from Shyam 20 baseline.`
+        : `Could not identify the raga yet. Detected Sa is ${session.root}.`,
       processLog: [
         'Mic connected.',
         'Listening stopped by you.',
-        `Key/Sa reference: ${session.root}.`,
+        `Sa detected from your voice: ${session.root}.`,
+        'Compared only against Shyam 20 recorded baseline.',
         `Heard swaras: ${heardSwaras.map((item) => item.swara).join(' ')}.`,
         confirmedMatch ? `Top match: ${confirmedMatch.name} at ${confirmedMatch.score}%.` : 'No confident raga match. Sing the complete Arohana and Avarohana slowly.'
       ],
@@ -1374,14 +1531,14 @@ function App({ user, onSignOut }) {
             <div className="builder-title">
               <div>
                 <span><Search size={16} /> Detect Raga</span>
-                <p>Using {pitch} as Sa</p>
+                <p>{ragaDetector.root ? `Detected ${ragaDetector.root} as Sa` : 'Auto-detects Sa from your voice'}</p>
               </div>
               <Sparkles size={20} />
             </div>
             <div className={`raga-detect-status ${ragaDetector.status}`}>
               <div>
                 <span>{ragaDetector.status === 'listening' ? 'Listening' : ragaDetector.status === 'detected' ? 'Identified' : 'Raga Finder'}</span>
-                <strong>{ragaDetector.matches.find((match) => match.strong)?.name || (ragaDetector.status === 'detected' || ragaDetector.status === 'error' ? `Key: ${pitch}` : 'Sing Aro/Avaro')}</strong>
+                <strong>{ragaDetector.matches.find((match) => match.strong)?.name || (ragaDetector.status === 'detected' || ragaDetector.status === 'error' ? `Sa: ${ragaDetector.root || 'not locked'}` : 'Sing Sa, then scale')}</strong>
                 <small>{ragaDetector.stage}</small>
                 {ragaDetector.error && <small className="detector-error">{ragaDetector.error}</small>}
               </div>
@@ -1407,9 +1564,9 @@ function App({ user, onSignOut }) {
             {ragaDetector.matches.length > 0 && (
               <div className="raga-match-list">
                 {ragaDetector.matches.slice(0, 3).map((match) => (
-                  <button key={match.id} onClick={() => setSelectedId(match.id)}>
+                  <button key={match.id} onClick={() => match.ragaId && setSelectedId(match.ragaId)}>
                     <strong>{match.name}</strong>
-                    <span>{match.score}% {match.strong ? 'match' : 'possible only'} · {match.system}</span>
+                    <span>{match.score}% {match.strong ? 'match' : 'possible only'} · Shyam 20 baseline</span>
                     <small>Matched: {match.matched.join(' ') || 'none'} · Missing: {match.missing.join(' ') || 'none'} · Signature missing: {match.signatureMissing.join(' ') || 'none'} · Extra: {match.extra.join(' ') || 'none'}</small>
                   </button>
                 ))}
@@ -2616,13 +2773,13 @@ function ragaSignatureIntervals(raga) {
   return signatures[raga.id] || [];
 }
 
-function matchRagas(heardIntervals) {
+function matchRagas(heardIntervals, candidates = ragas) {
   const heardSet = new Set(heardIntervals);
-  return ragas
+  return candidates
     .map((raga) => {
       const target = ragaIntervals(raga);
       const targetSet = new Set(target);
-      const signature = ragaSignatureIntervals(raga);
+      const signature = raga.signatureIntervals || ragaSignatureIntervals(raga);
       const matched = target.filter((interval) => heardSet.has(interval));
       const missing = target.filter((interval) => !heardSet.has(interval));
       const extra = [...heardSet].filter((interval) => !targetSet.has(interval));
@@ -2635,6 +2792,7 @@ function matchRagas(heardIntervals) {
       const strong = score >= 60 && heardSet.size >= 5 && signatureMissing.length <= Math.max(0, signature.length - 3);
       return {
         id: raga.id,
+        ragaId: raga.ragaId || raga.id,
         name: raga.name,
         system: raga.system,
         score,
