@@ -246,6 +246,29 @@ const concertSourceRoadmap = [
   }
 ];
 
+const shyamRecordedSamples = [
+  { id: 'shyam-abheri', ragaId: 'abheri_bhimpalasi', name: 'Abheri', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Abheri-CSharp.mp3' },
+  { id: 'shyam-anandabhairavi', name: 'Anandabhairavi', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Anandabhairavi-CSharp.mp3' },
+  { id: 'shyam-bhairavi', name: 'Bhairavi', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Bhairavi-CSharp.mp3' },
+  { id: 'shyam-bilahari', name: 'Bilahari', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Bilahari-CSharp.mp3' },
+  { id: 'shyam-charukeshi', ragaId: 'charukesi', name: 'Charukeshi', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Charukeshi-CSharp.mp3' },
+  { id: 'shyam-hamsadhwani', ragaId: 'hamsadhwani', name: 'Hamsadhwani', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Hamsadhwani-CSharp.mp3' },
+  { id: 'shyam-hindolam', ragaId: 'hindolam_malkauns', name: 'Hindolam', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Hindolam-CSharp.mp3' },
+  { id: 'shyam-kalyani', ragaId: 'kalyani', name: 'Kalyani', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Kalyani-CSharp.mp3' },
+  { id: 'shyam-kambhoji', ragaId: 'kambhoji', name: 'Kambhoji', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Kambhoji-CSharp.mp3' },
+  { id: 'shyam-kedaragowla', name: 'Kedaragowla', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Kedaragowla-CSharp.mp3' },
+  { id: 'shyam-keeravani', ragaId: 'keeravani_kirwani', name: 'Keeravani', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Keeravani-CSharp.mp3' },
+  { id: 'shyam-kharaharapriya', ragaId: 'kharaharapriya_kafi', name: 'Kharaharapriya', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Kharaharapriya-CSharp.mp3' },
+  { id: 'shyam-madhyamavati', name: 'Madhyamavati', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Madhyamavati-CSharp.mp3' },
+  { id: 'shyam-mayamalavagowla', ragaId: 'mayamalavagowla', name: 'Mayamalavagowla', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Mayamalavagowla-CSharp.mp3' },
+  { id: 'shyam-mohana', ragaId: 'mohana', name: 'Mohana', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Mohana-CSharp.mp3' },
+  { id: 'shyam-reetigowla', name: 'Reetigowla', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Reetigowla-CSharp.mp3' },
+  { id: 'shyam-saveri', name: 'Saveri', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Saveri-CSharp.mp3' },
+  { id: 'shyam-shankarabharanam', ragaId: 'shankarabharanam_bilawal', name: 'Shankarabharanam', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Shankarabharanam-CSharp.mp3' },
+  { id: 'shyam-shuddha-saveri', ragaId: 'shuddha_saveri_durga', name: 'Shuddha Saveri', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Shudda Saveri-CSharp.mp3' },
+  { id: 'shyam-todi', ragaId: 'todi', name: 'Todi', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Todi-CSharp.mp3' }
+];
+
 const roadmapColumns = [
   {
     title: 'Done',
@@ -2179,6 +2202,7 @@ function RagaQuizPage() {
 
 function EarTrainingPage({ pitch }) {
   const [activeLevel, setActiveLevel] = useState('level-1');
+  const [challengeSource, setChallengeSource] = useState('recorded');
   const recognitionPool = useMemo(() => {
     const byName = new Map();
     [...melakartaRagas, ...ragas]
@@ -2189,20 +2213,36 @@ function EarTrainingPage({ pitch }) {
     return Array.from(byName.values());
   }, []);
   const [recognitionChallenge, setRecognitionChallenge] = useState(() => buildRecognitionChallenge([...melakartaRagas, ...ragas].filter((raga) => raga.arohana.length && raga.avarohana.length)));
+  const [sampleChallenge, setSampleChallenge] = useState(() => buildSampleRecognitionChallenge(shyamRecordedSamples));
   const level = earTrainingLevels.find((item) => item.id === activeLevel) || earTrainingLevels[0];
   const recognitionRaga = recognitionPool.find((raga) => raga.id === recognitionChallenge.ragaId) || recognitionPool[0];
   const recognitionLine = recognitionChallenge.direction === 'arohana' ? recognitionRaga.arohana : recognitionRaga.avarohana;
+  const activeSample = shyamRecordedSamples.find((sample) => sample.id === sampleChallenge.sampleId) || shyamRecordedSamples[0];
+  const sampleRaga = recognitionPool.find((raga) => raga.id === activeSample?.ragaId);
 
   function selectLevel(levelId) {
     setActiveLevel(levelId);
     setRecognitionChallenge(buildRecognitionChallenge(recognitionPool));
+    setSampleChallenge(buildSampleRecognitionChallenge(shyamRecordedSamples));
   }
 
   function playRecognitionChallenge() {
+    if (challengeSource === 'recorded') {
+      playRecordedSample(activeSample);
+      return;
+    }
     playSwaraLine(recognitionLine, pitch);
   }
 
   function nextRecognitionChallenge() {
+    if (challengeSource === 'recorded') {
+      const nextChallenge = buildSampleRecognitionChallenge(shyamRecordedSamples, sampleChallenge.sampleId);
+      setSampleChallenge(nextChallenge);
+      const nextSample = shyamRecordedSamples.find((sample) => sample.id === nextChallenge.sampleId);
+      playRecordedSample(nextSample);
+      return;
+    }
+
     const nextChallenge = buildRecognitionChallenge(recognitionPool, recognitionChallenge.ragaId);
     setRecognitionChallenge(nextChallenge);
     playSwaraLine(
@@ -2214,6 +2254,16 @@ function EarTrainingPage({ pitch }) {
   }
 
   function answerRecognition(answer) {
+    if (challengeSource === 'recorded') {
+      setSampleChallenge((current) => ({
+        ...current,
+        answered: answer,
+        result: answer === current.sampleId ? 'correct' : 'wrong'
+      }));
+      if (sampleRaga) playRagaScaleReview(sampleRaga, pitch);
+      return;
+    }
+
     setRecognitionChallenge((current) => ({
       ...current,
       answered: answer,
@@ -2245,15 +2295,19 @@ function EarTrainingPage({ pitch }) {
           <aside className="ear-lessons">
             <div className="recognition-set-card">
               <span>Scale Challenge</span>
-              <strong>Hidden raga</strong>
-              <p>Challenge hides the raga name until the user answers.</p>
+              <strong>{challengeSource === 'recorded' ? 'Shyam C# recordings' : 'Synthetic swara scale'}</strong>
+              <p>{challengeSource === 'recorded' ? '20 labeled Arohana/Avarohana voice clips are now the baseline quiz set.' : 'Challenge hides the raga name until the user answers.'}</p>
+              <div className="sample-source-toggle">
+                <button className={challengeSource === 'recorded' ? 'active' : ''} onClick={() => setChallengeSource('recorded')}>Recorded</button>
+                <button className={challengeSource === 'synthetic' ? 'active' : ''} onClick={() => setChallengeSource('synthetic')}>Synthetic</button>
+              </div>
             </div>
           </aside>
 
           <section className="ear-drill recognition-drill">
             <div className="ear-drill-head">
               <div>
-                <span>Level 1 · {pitch} Sa</span>
+                <span>Level 1 · {challengeSource === 'recorded' ? 'Shyam C#' : `${pitch} Sa`}</span>
                 <h2>Identify the Raga</h2>
                 <p>Listen first. Choose the raga from the options.</p>
               </div>
@@ -2262,18 +2316,26 @@ function EarTrainingPage({ pitch }) {
 
             <div className="hidden-raga-panel">
               <span>Hidden Raga</span>
-              <strong>{recognitionChallenge.answered ? recognitionRaga.name : 'Listen and identify'}</strong>
-              <small>{recognitionChallenge.answered ? `${recognitionChallenge.direction} was played.` : 'Challenge hides the raga name until the user answers.'}</small>
+              <strong>{challengeSource === 'recorded'
+                ? (sampleChallenge.answered ? activeSample.name : 'Listen and identify')
+                : (recognitionChallenge.answered ? recognitionRaga.name : 'Listen and identify')}</strong>
+              <small>{challengeSource === 'recorded'
+                ? (sampleChallenge.answered ? `${activeSample.singer} recording in ${activeSample.key}.` : 'Recorded Arohana/Avarohana sample; raga is hidden until you answer.')
+                : (recognitionChallenge.answered ? `${recognitionChallenge.direction} was played.` : 'Challenge hides the raga name until the user answers.')}</small>
             </div>
 
             <div className="recognition-options">
-              {recognitionChallenge.options.map((optionId) => {
-                const option = recognitionPool.find((raga) => raga.id === optionId);
+              {(challengeSource === 'recorded' ? sampleChallenge.options : recognitionChallenge.options).map((optionId) => {
+                const option = challengeSource === 'recorded'
+                  ? shyamRecordedSamples.find((sample) => sample.id === optionId)
+                  : recognitionPool.find((raga) => raga.id === optionId);
+                const answerId = challengeSource === 'recorded' ? sampleChallenge.sampleId : recognitionChallenge.ragaId;
+                const answeredId = challengeSource === 'recorded' ? sampleChallenge.answered : recognitionChallenge.answered;
                 if (!option) return null;
                 return (
                   <button
                     key={option.id}
-                    className={recognitionChallenge.answered === option.id ? 'selected' : option.id === recognitionChallenge.ragaId && recognitionChallenge.answered ? 'answer' : ''}
+                    className={answeredId === option.id ? 'selected' : option.id === answerId && answeredId ? 'answer' : ''}
                     onClick={() => answerRecognition(option.id)}
                   >
                     {option.name}
@@ -2282,15 +2344,20 @@ function EarTrainingPage({ pitch }) {
               })}
             </div>
 
-            {recognitionChallenge.answered && (
-              <div className={`recognition-feedback ${recognitionChallenge.result}`}>
-                <strong>{recognitionChallenge.result === 'correct' ? `Correct. This is ${recognitionRaga.name}.` : `Incorrect answer. It was ${recognitionRaga.name}.`}</strong>
-                <p className="recognition-detail">{ragaLineageDetail(recognitionRaga)}</p>
+            {(challengeSource === 'recorded' ? sampleChallenge.answered : recognitionChallenge.answered) && (
+              <div className={`recognition-feedback ${challengeSource === 'recorded' ? sampleChallenge.result : recognitionChallenge.result}`}>
+                <strong>{(challengeSource === 'recorded' ? sampleChallenge.result : recognitionChallenge.result) === 'correct'
+                  ? `Correct. This is ${challengeSource === 'recorded' ? activeSample.name : recognitionRaga.name}.`
+                  : `Incorrect answer. It was ${challengeSource === 'recorded' ? activeSample.name : recognitionRaga.name}.`}</strong>
+                <p className="recognition-detail">{challengeSource === 'recorded'
+                  ? `${activeSample.singer} baseline sample in ${activeSample.key}. ${sampleRaga ? ragaLineageDetail(sampleRaga) : 'Scale metadata is pending in the raga database.'}`
+                  : ragaLineageDetail(recognitionRaga)}</p>
                 <div className="recognition-scale">
-                  <p><b>Arohana</b>{recognitionRaga.arohana.join(' ')}</p>
-                  <p><b>Avarohana</b>{recognitionRaga.avarohana.join(' ')}</p>
+                  <p><b>Arohana</b>{(challengeSource === 'recorded' ? sampleRaga?.arohana : recognitionRaga.arohana)?.join(' ') || 'Pending'}</p>
+                  <p><b>Avarohana</b>{(challengeSource === 'recorded' ? sampleRaga?.avarohana : recognitionRaga.avarohana)?.join(' ') || 'Pending'}</p>
                 </div>
-                <button onClick={() => playRagaScaleReview(recognitionRaga, pitch)}>Play Arohana & Avarohana</button>
+                {challengeSource === 'recorded' && <button onClick={() => playRecordedSample(activeSample)}>Replay Shyam Sample</button>}
+                <button onClick={() => sampleRaga ? playRagaScaleReview(sampleRaga, pitch) : playRagaScaleReview(recognitionRaga, pitch)}>Play Arohana & Avarohana</button>
                 <button onClick={nextRecognitionChallenge}>Next Challenge</button>
               </div>
             )}
@@ -2349,6 +2416,35 @@ function buildRecognitionChallenge(pool, excludeId = '') {
     answered: '',
     result: ''
   };
+}
+
+function buildSampleRecognitionChallenge(samples, excludeId = '') {
+  const usablePool = samples.length ? samples : shyamRecordedSamples;
+  let answer = usablePool[Math.floor(Math.random() * usablePool.length)];
+  if (usablePool.length > 1) {
+    while (answer.id === excludeId) {
+      answer = usablePool[Math.floor(Math.random() * usablePool.length)];
+    }
+  }
+  const distractors = usablePool
+    .filter((sample) => sample.id !== answer.id)
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 3)
+    .map((sample) => sample.id);
+  const options = [answer.id, ...distractors].sort(() => Math.random() - 0.5);
+  return {
+    sampleId: answer.id,
+    options,
+    answered: '',
+    result: ''
+  };
+}
+
+function playRecordedSample(sample) {
+  if (!sample?.src) return;
+  const audio = new Audio(sample.src);
+  audio.volume = 0.92;
+  audio.play().catch(() => {});
 }
 
 function ragaLineageDetail(raga) {
