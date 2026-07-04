@@ -1145,7 +1145,7 @@ function App({ user, onSignOut }) {
           const interval = noteToInterval(detected.note, session.root);
           session.heard.push({ note: detected.note, frequency, interval });
           session.silentFrames = 0;
-          const heardSwaras = summarizeStableHeardIntervals(session.heard);
+          const heardSwaras = cleanDetectedSwaras(summarizeStableHeardIntervals(session.heard));
           setRagaDetector((current) => ({
             ...current,
             status: 'listening',
@@ -1206,7 +1206,7 @@ function App({ user, onSignOut }) {
     session.audioContext.close();
     ragaSessionRef.current = null;
 
-    const heardSwaras = summarizeStableHeardIntervals(session.heard);
+    const heardSwaras = cleanDetectedSwaras(summarizeStableHeardIntervals(session.heard));
     if (!session.root || !heardSwaras.length) {
       setRagaDetector({
         status: 'error',
@@ -1228,7 +1228,8 @@ function App({ user, onSignOut }) {
       return;
     }
 
-    const heardSequence = compactHeardIntervalSequence(session.heard);
+    const cleanedIntervals = new Set(heardSwaras.map((item) => item.interval));
+    const heardSequence = compactHeardIntervalSequence(session.heard, cleanedIntervals);
     const matches = matchRagas(heardSwaras.map((item) => item.interval), shyamPilotRagas, heardSequence);
     const confirmedMatch = matches.find((match) => match.strong);
     const madhyamamDiagnosis = describeMadhyamamCapture(heardSwaras, session.root);
@@ -2745,6 +2746,24 @@ function summarizeStableHeardIntervals(heard) {
   return intervals.filter((item) => item.count >= minimumCount);
 }
 
+function cleanDetectedSwaras(intervals) {
+  const byInterval = new Map(intervals.map((item) => [item.interval, item]));
+  const removeWeakerNeighbor = (leftInterval, rightInterval, dominanceRatio = 1.12) => {
+    const left = byInterval.get(leftInterval);
+    const right = byInterval.get(rightInterval);
+    if (!left || !right) return;
+    if (right.count >= left.count * dominanceRatio) byInterval.delete(leftInterval);
+    if (left.count >= right.count * dominanceRatio) byInterval.delete(rightInterval);
+  };
+
+  removeWeakerNeighbor(5, 6, 1.08); // M1 vs M2
+  removeWeakerNeighbor(8, 9, 1.18); // D1 vs D2/N1
+  removeWeakerNeighbor(9, 10, 1.18); // D2/N1 vs D3/N2
+  removeWeakerNeighbor(10, 11, 1.18); // D3/N2 vs N3
+
+  return Array.from(byInterval.values()).sort((a, b) => a.interval - b.interval);
+}
+
 function describeMadhyamamCapture(heardSwaras, root) {
   const heardIntervals = new Set(heardSwaras.map((item) => item.interval));
   const m1Note = noteFromInterval(root, 5);
@@ -2821,9 +2840,11 @@ function ragaSignatureIntervals(raga) {
   return signatures[raga.id] || [];
 }
 
-function compactHeardIntervalSequence(heard) {
+function compactHeardIntervalSequence(heard, allowedIntervals = null) {
   const runs = [];
-  heard.forEach((item) => {
+  heard
+    .filter((item) => !allowedIntervals || allowedIntervals.has(item.interval))
+    .forEach((item) => {
     const last = runs[runs.length - 1];
     if (last && last.interval === item.interval) {
       last.count += 1;
