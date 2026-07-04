@@ -1231,6 +1231,7 @@ function App({ user, onSignOut }) {
     const heardSequence = compactHeardIntervalSequence(session.heard);
     const matches = matchRagas(heardSwaras.map((item) => item.interval), shyamPilotRagas, heardSequence);
     const confirmedMatch = matches.find((match) => match.strong);
+    const madhyamamDiagnosis = describeMadhyamamCapture(heardSwaras, session.root);
     const tooManySwaras = heardSwaras.length > 8;
     setRagaDetector({
       status: 'detected',
@@ -1249,6 +1250,7 @@ function App({ user, onSignOut }) {
         `Sa detected from your voice: ${session.root}.`,
         'Compared only against Shyam 20 recorded baseline.',
         `Heard swaras: ${heardSwaras.map((item) => item.swara).join(' ')}.`,
+        madhyamamDiagnosis,
         `Heard scale path: ${heardSequence.map((interval) => intervalLabels[interval]).join(' ') || 'not enough ordered notes'}.`,
         confirmedMatch ? `Top match: ${confirmedMatch.name} at ${confirmedMatch.score}%.` : 'No confident raga match. Hold Sa first, then sing the scale one note at a time.'
       ],
@@ -2741,6 +2743,22 @@ function summarizeStableHeardIntervals(heard) {
   const maxCount = Math.max(...intervals.map((item) => item.count));
   const minimumCount = Math.max(3, Math.ceil(maxCount * 0.08));
   return intervals.filter((item) => item.count >= minimumCount);
+}
+
+function describeMadhyamamCapture(heardSwaras, root) {
+  const heardIntervals = new Set(heardSwaras.map((item) => item.interval));
+  const m1Note = noteFromInterval(root, 5);
+  const m2Note = noteFromInterval(root, 6);
+  if (heardIntervals.has(5) && heardIntervals.has(6)) {
+    return `Madhyamam captured as both M1 (${m1Note}) and M2 (${m2Note}); please sing Ma more steadily.`;
+  }
+  if (heardIntervals.has(6)) {
+    return `Madhyamam captured as M2 (${m2Note}) - Kalyani side, not Shankarabharanam.`;
+  }
+  if (heardIntervals.has(5)) {
+    return `Madhyamam captured as M1 (${m1Note}) - Shankarabharanam/Bilahari side, not Kalyani.`;
+  }
+  return `Madhyamam was not captured clearly. For ${root} Sa: M1 is ${m1Note}, M2 is ${m2Note}.`;
 }
 
 function normalizeRagaSearchText(value = '') {
