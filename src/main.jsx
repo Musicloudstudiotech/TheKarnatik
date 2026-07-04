@@ -1108,13 +1108,18 @@ function App({ user, onSignOut }) {
         const frequency = detectPitch(buffer, audioContext.sampleRate);
         if (frequency) {
           const detected = frequencyToNote(frequency);
+          if (!isStableDetectedPitch(detected)) {
+            session.rafId = requestAnimationFrame(tick);
+            return;
+          }
           session.samples.push(frequency);
 
           if (!session.root) {
             session.rootSamples.push({ note: detected.note, frequency });
             const rootNotes = summarizeHeardNotes(session.rootSamples);
             const candidateRoot = rootNotes[0]?.note || detected.note;
-            if (session.rootSamples.length >= 8) {
+            const rootConfidence = rootNotes[0] ? rootNotes[0].count / session.rootSamples.length : 0;
+            if (session.rootSamples.length >= 18 && rootConfidence >= 0.72) {
               session.root = candidateRoot;
               setPitch(candidateRoot);
             }
@@ -1123,10 +1128,10 @@ function App({ user, onSignOut }) {
               status: 'listening',
               root: session.root,
               heardNotes: rootNotes.slice(0, 4),
-              stage: session.root ? `Sa locked as ${session.root}. Continue Arohana and Avarohana.` : `Finding Sa... nearest note ${candidateRoot}. Hold Sa briefly.`,
+              stage: session.root ? `Sa locked as ${session.root}. Continue Arohana and Avarohana.` : `Finding Sa... hold ${candidateRoot} steadily before singing the scale.`,
               processLog: [
                 'Mic connected.',
-                session.root ? `Sa locked from your voice: ${session.root}.` : `Finding Sa from first note: ${candidateRoot}.`,
+                session.root ? `Sa locked from your voice: ${session.root}.` : `Finding Sa: ${candidateRoot} at ${Math.round(rootConfidence * 100)}% stability.`,
                 'Now sing Arohana and Avarohana slowly.',
                 'Tap Stop & Identify when done.'
               ],
@@ -1140,7 +1145,7 @@ function App({ user, onSignOut }) {
           const interval = noteToInterval(detected.note, session.root);
           session.heard.push({ note: detected.note, frequency, interval });
           session.silentFrames = 0;
-          const heardSwaras = summarizeHeardIntervals(session.heard);
+          const heardSwaras = summarizeStableHeardIntervals(session.heard);
           setRagaDetector((current) => ({
             ...current,
             status: 'listening',
@@ -1201,7 +1206,7 @@ function App({ user, onSignOut }) {
     session.audioContext.close();
     ragaSessionRef.current = null;
 
-    const heardSwaras = summarizeHeardIntervals(session.heard);
+    const heardSwaras = summarizeStableHeardIntervals(session.heard);
     if (!session.root || !heardSwaras.length) {
       setRagaDetector({
         status: 'error',
@@ -1225,6 +1230,7 @@ function App({ user, onSignOut }) {
 
     const matches = matchRagas(heardSwaras.map((item) => item.interval), shyamPilotRagas);
     const confirmedMatch = matches.find((match) => match.strong);
+    const tooManySwaras = heardSwaras.length > 8;
     setRagaDetector({
       status: 'detected',
       root: session.root,
@@ -1233,14 +1239,16 @@ function App({ user, onSignOut }) {
       matches,
       stage: confirmedMatch
         ? `Likely raga: ${confirmedMatch.name} (${confirmedMatch.score}%) from Shyam 20 baseline.`
-        : `Could not identify the raga yet. Detected Sa is ${session.root}.`,
+        : tooManySwaras
+          ? `Could not identify confidently. Too many swara variants were detected; Sa may be wrong or the scale was not sung steadily.`
+          : `Could not identify the raga yet. Detected Sa is ${session.root}.`,
       processLog: [
         'Mic connected.',
         'Listening stopped by you.',
         `Sa detected from your voice: ${session.root}.`,
         'Compared only against Shyam 20 recorded baseline.',
         `Heard swaras: ${heardSwaras.map((item) => item.swara).join(' ')}.`,
-        confirmedMatch ? `Top match: ${confirmedMatch.name} at ${confirmedMatch.score}%.` : 'No confident raga match. Sing the complete Arohana and Avarohana slowly.'
+        confirmedMatch ? `Top match: ${confirmedMatch.name} at ${confirmedMatch.score}%.` : 'No confident raga match. Hold Sa first, then sing the scale one note at a time.'
       ],
       error: ''
     });
@@ -2695,6 +2703,10 @@ function frequencyToNote(frequency) {
   return { note: noteNames[((midi % 12) + 12) % 12], cents };
 }
 
+function isStableDetectedPitch(detected, maxCents = 38) {
+  return Math.abs(detected.cents) <= maxCents;
+}
+
 function summarizeHeardNotes(heard) {
   const counts = heard.reduce((acc, item) => {
     acc[item.note] = (acc[item.note] || 0) + 1;
@@ -2719,6 +2731,14 @@ function summarizeHeardIntervals(heard) {
   return Object.entries(counts)
     .map(([interval, count]) => ({ interval: Number(interval), swara: intervalLabels[Number(interval)], count }))
     .sort((a, b) => a.interval - b.interval);
+}
+
+function summarizeStableHeardIntervals(heard) {
+  const intervals = summarizeHeardIntervals(heard);
+  if (!intervals.length) return [];
+  const maxCount = Math.max(...intervals.map((item) => item.count));
+  const minimumCount = Math.max(3, Math.ceil(maxCount * 0.08));
+  return intervals.filter((item) => item.count >= minimumCount);
 }
 
 function normalizeRagaSearchText(value = '') {
@@ -2785,11 +2805,13 @@ function matchRagas(heardIntervals, candidates = ragas) {
       const extra = [...heardSet].filter((interval) => !targetSet.has(interval));
       const signatureMissing = signature.filter((interval) => !heardSet.has(interval));
       const coverage = matched.length / target.length;
-      const extraPenalty = extra.length / Math.max(heardSet.size, 1);
+      const missingPenalty = missing.length / target.length;
+      const extraPenalty = extra.length / Math.max(target.length, 1);
       const sparsePenalty = heardSet.size < 4 ? 0.18 : 0;
       const signaturePenalty = signature.length ? (signatureMissing.length / signature.length) * 0.36 : 0;
-      const score = Math.max(0, Math.round((coverage - extraPenalty * 0.45 - sparsePenalty - signaturePenalty) * 100));
-      const strong = score >= 60 && heardSet.size >= 5 && signatureMissing.length <= Math.max(0, signature.length - 3);
+      const chromaticPenalty = heardSet.size > 8 ? 0.35 : 0;
+      const score = Math.max(0, Math.round((coverage - missingPenalty * 0.2 - extraPenalty * 1.05 - sparsePenalty - signaturePenalty - chromaticPenalty) * 100));
+      const strong = score >= 88 && extra.length <= 1 && missing.length <= 1 && heardSet.size >= Math.min(5, target.length) && signatureMissing.length === 0;
       return {
         id: raga.id,
         ragaId: raga.ragaId || raga.id,
