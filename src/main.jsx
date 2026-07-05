@@ -454,6 +454,75 @@ function optionSet(answer, pool, seed = 0) {
     .map((_, index, list) => list[(index + seed) % list.length]);
 }
 
+const swaraVariantOptions = {
+  R: ['R1', 'R2', 'R3'],
+  G: ['G1', 'G2', 'G3'],
+  M: ['M1', 'M2'],
+  D: ['D1', 'D2', 'D3'],
+  N: ['N1', 'N2', 'N3']
+};
+
+const swaraVariantNames = {
+  R: 'Rishabham',
+  G: 'Gandharam',
+  M: 'Madhyamam',
+  D: 'Dhaivatam',
+  N: 'Nishadam'
+};
+
+function cleanScaleSwara(swara) {
+  return displaySwaraLabel(normalizeSwara(swara));
+}
+
+function swaraVariantBase(swara) {
+  const clean = cleanScaleSwara(swara);
+  if (/^[RGMDN][123]$/.test(clean)) return clean[0];
+  return '';
+}
+
+function uniqueVariantSlots(raga) {
+  const seen = new Map();
+  raga.arohana.concat(raga.avarohana).forEach((swara) => {
+    const answer = cleanScaleSwara(swara);
+    const base = swaraVariantBase(answer);
+    if (!base || !swaraVariantOptions[base] || seen.has(base)) return;
+    seen.set(base, {
+      base,
+      label: swaraVariantNames[base],
+      answer,
+      options: swaraVariantOptions[base]
+    });
+  });
+  return Array.from(seen.values());
+}
+
+function buildScaleBuilderQuestions() {
+  const quizRagas = [...ragas, ...melakartaRagas]
+    .filter((raga) => (raga.system === 'Karnatik' || raga.system === 'Both') && raga.arohana?.length && raga.avarohana?.length)
+    .filter((raga, index, list) => list.findIndex((item) => item.name === raga.name) === index);
+
+  return quizRagas
+    .map((raga) => {
+      const slots = uniqueVariantSlots(raga);
+      if (!slots.length) return null;
+      return {
+        type: 'Scale Builder',
+        bucket: 'scale-builder',
+        kind: 'scale-builder',
+        prompt: `Build the swara variants for ${raga.name}.`,
+        options: [],
+        answer: 'complete',
+        ragaName: raga.name,
+        raga,
+        slots,
+        fullArohana: raga.arohana.map(cleanScaleSwara),
+        fullAvarohana: raga.avarohana.map(cleanScaleSwara),
+        detail: `${raga.name}: ${ragaStudyLineageDetail(raga)}`
+      };
+    })
+    .filter(Boolean);
+}
+
 function buildRagaQuizQuestions() {
   const rows = melakartaRows();
   const chakraNames = melakartaChakras.map((chakra) => chakra.name);
@@ -551,11 +620,12 @@ function buildRagaQuizQuestions() {
     });
   });
 
-  return questions;
+  return [...buildScaleBuilderQuestions(), ...questions];
 }
 
 const ragaQuizQuestions = buildRagaQuizQuestions();
 const quizBuckets = [
+  { id: 'scale-builder', label: 'Scale Builder', note: 'Fill R, G, M, D, N variants inside raga scales' },
   { id: 'chakra', label: 'Chakra Based', note: 'Chakra range, M1/M2, raga placement' },
   { id: 'melakarta', label: 'Melakarta Based', note: 'All 72 parent ragas by name and number' },
   { id: 'notes', label: 'Notes Based', note: 'Rishabham, Gandharam, Madhyamam, Dhaivatam, Nishadam' },
@@ -2244,28 +2314,48 @@ function ConcertsPage() {
 }
 
 function RagaQuizPage() {
-  const [quizBucket, setQuizBucket] = useState('chakra');
+  const [quizBucket, setQuizBucket] = useState('scale-builder');
   const bucketQuestions = useMemo(
     () => ragaQuizQuestions.filter((question) => question.bucket === quizBucket),
     [quizBucket]
   );
-  const [questionIndex, setQuestionIndex] = useState(() => Math.floor(Math.random() * ragaQuizQuestions.filter((question) => question.bucket === 'chakra').length));
+  const [questionIndex, setQuestionIndex] = useState(() => Math.floor(Math.random() * ragaQuizQuestions.filter((question) => question.bucket === 'scale-builder').length));
   const [answers, setAnswers] = useState({});
   const [history, setHistory] = useState([]);
   const currentQuestion = bucketQuestions[questionIndex] || bucketQuestions[0];
-  const answerKey = `${quizBucket}-${questionIndex}`;
+  const answerKey = `${quizBucket}::${questionIndex}`;
   const selectedAnswer = answers[answerKey];
-  const isCorrect = selectedAnswer === currentQuestion.answer;
+  const isScaleBuilder = currentQuestion.kind === 'scale-builder';
+  const scaleAnswers = isScaleBuilder && selectedAnswer && typeof selectedAnswer === 'object' ? selectedAnswer : {};
+  const answeredScaleSlots = isScaleBuilder ? currentQuestion.slots.filter((slot) => scaleAnswers[slot.base]) : [];
+  const isScaleComplete = isScaleBuilder && answeredScaleSlots.length === currentQuestion.slots.length;
+  const isCorrect = isScaleBuilder
+    ? isScaleComplete && currentQuestion.slots.every((slot) => scaleAnswers[slot.base] === slot.answer)
+    : selectedAnswer === currentQuestion.answer;
   const answeredCount = Object.keys(answers).length;
   const score = Object.entries(answers).reduce((total, [key, answer]) => {
-    const [bucket, index] = key.split('-');
+    const [bucket, index] = key.split('::');
     const question = ragaQuizQuestions.filter((item) => item.bucket === bucket)[Number(index)];
+    if (question?.kind === 'scale-builder') {
+      const slotAnswers = answer && typeof answer === 'object' ? answer : {};
+      return total + (question.slots.every((slot) => slotAnswers[slot.base] === slot.answer) ? 1 : 0);
+    }
     return total + (question?.answer === answer ? 1 : 0);
   }, 0);
   const percent = answeredCount ? Math.round((score / answeredCount) * 100) : 0;
 
   function chooseAnswer(option) {
     setAnswers((current) => ({ ...current, [answerKey]: option }));
+  }
+
+  function chooseScaleAnswer(base, option) {
+    setAnswers((current) => ({
+      ...current,
+      [answerKey]: {
+        ...(current[answerKey] && typeof current[answerKey] === 'object' ? current[answerKey] : {}),
+        [base]: option
+      }
+    }));
   }
 
   function randomQuestion(excludeIndex = questionIndex) {
@@ -2338,24 +2428,81 @@ function RagaQuizPage() {
           <span style={{ width: `${((questionIndex + 1) / bucketQuestions.length) * 100}%` }}></span>
         </div>
 
-        <article className={`exercise-card ${selectedAnswer ? (isCorrect ? 'correct' : 'wrong') : ''}`}>
+        <article className={`exercise-card ${(isScaleBuilder ? isScaleComplete : selectedAnswer) ? (isCorrect ? 'correct' : 'wrong') : ''}`}>
           <div className="exercise-number">{currentQuestion.type} Drill</div>
           <h2>{currentQuestion.prompt}</h2>
-          <div className="exercise-options">
-            {currentQuestion.options.map((option) => (
-              <button
-                key={option}
-                className={selectedAnswer === option ? 'selected' : option === currentQuestion.answer && selectedAnswer ? 'answer' : ''}
-                onClick={() => chooseAnswer(option)}
-              >
-                {option}
-              </button>
-            ))}
-          </div>
-          {selectedAnswer && (
+          {isScaleBuilder && (
+            <div className="scale-builder-panel">
+              <div className="scale-builder-title">
+                <span>{currentQuestion.ragaName}</span>
+                <strong>{isScaleComplete ? (isCorrect ? 'Complete' : 'Review') : `${answeredScaleSlots.length}/${currentQuestion.slots.length}`}</strong>
+              </div>
+              <div className="scale-builder-lines" aria-label={`${currentQuestion.ragaName} scale`}>
+                <div>
+                  <b>Arohana</b>
+                  <div className="scale-builder-line">
+                    {currentQuestion.fullArohana.map((swara, index) => {
+                      const base = swaraVariantBase(swara);
+                      const chosen = base ? scaleAnswers[base] : '';
+                      return <span key={`aro-${swara}-${index}`} className={base && !chosen ? 'blank' : chosen && chosen !== swara ? 'wrong-choice' : ''}>{base ? (chosen || '?') : swara}</span>;
+                    })}
+                  </div>
+                </div>
+                <div>
+                  <b>Avarohana</b>
+                  <div className="scale-builder-line">
+                    {currentQuestion.fullAvarohana.map((swara, index) => {
+                      const base = swaraVariantBase(swara);
+                      const chosen = base ? scaleAnswers[base] : '';
+                      return <span key={`ava-${swara}-${index}`} className={base && !chosen ? 'blank' : chosen && chosen !== swara ? 'wrong-choice' : ''}>{base ? (chosen || '?') : swara}</span>;
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          {isScaleBuilder ? (
+            <div className="scale-variant-grid">
+              {currentQuestion.slots.map((slot) => (
+                <div className="scale-variant-row" key={slot.base}>
+                  <strong>{slot.label}</strong>
+                  <div>
+                    {slot.options.map((option) => (
+                      <button
+                        key={option}
+                        className={scaleAnswers[slot.base] === option ? 'selected' : scaleAnswers[slot.base] && option === slot.answer ? 'answer' : ''}
+                        onClick={() => chooseScaleAnswer(slot.base, option)}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="exercise-options">
+              {currentQuestion.options.map((option) => (
+                <button
+                  key={option}
+                  className={selectedAnswer === option ? 'selected' : option === currentQuestion.answer && selectedAnswer ? 'answer' : ''}
+                  onClick={() => chooseAnswer(option)}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+          )}
+          {(isScaleBuilder ? isScaleComplete : selectedAnswer) && (
             <p className="exercise-feedback">
-              {isCorrect ? 'Correct. ' : `Not quite. Answer: ${currentQuestion.answer}. `}
+              {isCorrect ? 'Correct. ' : isScaleBuilder ? `Not quite. Correct variants: ${currentQuestion.slots.map((slot) => `${slot.label} ${slot.answer}`).join(', ')}. ` : `Not quite. Answer: ${currentQuestion.answer}. `}
               {currentQuestion.detail}
+              {isScaleBuilder && (
+                <>
+                  <br />
+                  <b>Arohana:</b> {currentQuestion.fullArohana.join(' ')} <b>Avarohana:</b> {currentQuestion.fullAvarohana.join(' ')}
+                </>
+              )}
             </p>
           )}
         </article>
@@ -2625,6 +2772,19 @@ function ragaLineageDetail(raga) {
     return `${raga.name} belongs to ${raga.parent}. ${raga.family || ''}`.trim();
   }
   return `${raga.name} belongs to ${raga.family || raga.system}.`;
+}
+
+function ragaStudyLineageDetail(raga) {
+  if (raga.lineage === 'janaka' && raga.chakra) {
+    return `Janaka Melakarta ${raga.number}, Chakra ${raga.chakraNumber} ${raga.chakra}.`;
+  }
+  if (/melakarta/i.test(raga.family || '')) {
+    return `Janaka/Melakarta family reference: ${raga.family}.`;
+  }
+  if (raga.parent || /^janya of/i.test(raga.family || '')) {
+    return `Janya raga. Parent/family: ${raga.parent || raga.family}.`;
+  }
+  return `${raga.family || raga.system} raga.`;
 }
 
 function playRagaScaleReview(raga, root) {

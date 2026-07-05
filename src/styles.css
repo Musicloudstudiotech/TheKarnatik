@@ -1833,7 +1833,7 @@ h3 {
 
 .quiz-buckets {
   display: grid;
-  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 10px;
   margin-bottom: 14px;
 }
@@ -2106,6 +2106,134 @@ h3 {
   font-size: 30px;
   line-height: 1.25;
   margin: 0;
+}
+
+.scale-builder-panel {
+  width: min(780px, 100%);
+  justify-self: center;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: rgba(244, 240, 230, 0.52);
+  padding: 18px;
+}
+
+.scale-builder-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.scale-builder-title span,
+.scale-builder-title strong {
+  color: var(--teal-dark);
+  font-weight: 900;
+}
+
+.scale-builder-title span {
+  font-size: 18px;
+}
+
+.scale-builder-title strong {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.scale-builder-lines {
+  display: grid;
+  gap: 14px;
+}
+
+.scale-builder-lines b {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.scale-builder-line {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.scale-builder-line span {
+  min-width: 54px;
+  min-height: 50px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(7, 91, 97, 0.22);
+  border-radius: 7px;
+  background: rgba(255, 253, 247, 0.95);
+  color: #263235;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.scale-builder-line span.blank {
+  border-color: var(--teal);
+  background: var(--teal);
+  color: white;
+  box-shadow: 0 0 0 4px rgba(7, 91, 97, 0.12);
+}
+
+.scale-builder-line span.wrong-choice {
+  border-color: rgba(213, 150, 53, 0.7);
+  background: rgba(255, 248, 235, 0.95);
+  color: #8a5a12;
+}
+
+.scale-variant-grid {
+  width: min(760px, 100%);
+  justify-self: center;
+  display: grid;
+  gap: 10px;
+}
+
+.scale-variant-row {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.scale-variant-row > strong {
+  color: var(--teal-dark);
+  text-align: right;
+}
+
+.scale-variant-row > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(76px, 1fr));
+  gap: 8px;
+}
+
+.scale-variant-row button {
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--paper);
+  color: #263235;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.scale-variant-row button.selected {
+  border-color: var(--teal);
+  background: var(--teal);
+  color: white;
+}
+
+.scale-variant-row button.answer {
+  border-color: rgba(22, 130, 70, 0.48);
+  background: rgba(232, 247, 238, 0.92);
+  color: #145b35;
 }
 
 .exercise-options {
@@ -3421,6 +3549,14 @@ input[type="range"] {
 
   .exercise-card h2 {
     font-size: 24px;
+  }
+
+  .scale-variant-row {
+    grid-template-columns: 1fr;
+  }
+
+  .scale-variant-row > strong {
+    text-align: left;
   }
 
   .exercise-actions {
