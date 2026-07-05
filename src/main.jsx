@@ -1388,7 +1388,7 @@ function App({ user, onSignOut }) {
         ) : activePage === 'chords' ? (
           <ChordAnalyserPage pitch={pitch} setPitch={setPitch} selectedId={selected.id} />
         ) : activePage === 'quiz' ? (
-          <RagaQuizPage />
+          <RagaQuizPage pitch={pitch} />
         ) : activePage === 'ear-training' ? (
           <EarTrainingPage pitch={pitch} />
         ) : activePage === 'concerts' ? (
@@ -2313,7 +2313,7 @@ function ConcertsPage() {
   );
 }
 
-function RagaQuizPage() {
+function RagaQuizPage({ pitch }) {
   const [quizBucket, setQuizBucket] = useState('scale-builder');
   const bucketQuestions = useMemo(
     () => ragaQuizQuestions.filter((question) => question.bucket === quizBucket),
@@ -2349,6 +2349,7 @@ function RagaQuizPage() {
   }
 
   function chooseScaleAnswer(base, option) {
+    playSingleSwara(option, pitch);
     setAnswers((current) => ({
       ...current,
       [answerKey]: {
@@ -3234,6 +3235,28 @@ function playSwaraLine(line, root) {
   });
 
   window.setTimeout(() => context.close(), (line.length * step + 0.6) * 1000);
+}
+
+function playSingleSwara(swara, root) {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return;
+  const frequency = swaraFrequency(swara, root);
+  if (!frequency) return;
+  const context = new AudioContextClass();
+  context.resume();
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  const now = context.currentTime + 0.02;
+  oscillator.type = 'sine';
+  oscillator.frequency.value = frequency;
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(0.2, now + 0.025);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.55);
+  oscillator.connect(gain);
+  gain.connect(context.destination);
+  oscillator.start(now);
+  oscillator.stop(now + 0.58);
+  window.setTimeout(() => context.close(), 720);
 }
 
 function getHarmony(raga, root) {
