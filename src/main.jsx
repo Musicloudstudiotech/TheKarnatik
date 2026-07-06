@@ -973,7 +973,13 @@ function App({ user, onSignOut }) {
         processLog: ['Requesting access to your system mic.'],
         error: ''
       }));
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false
+        }
+      });
       setDetector((current) => ({
         ...current,
         status: 'listening',
@@ -983,7 +989,7 @@ function App({ user, onSignOut }) {
       const audioContext = new AudioContext();
       const source = audioContext.createMediaStreamSource(stream);
       const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 4096;
+      analyser.fftSize = 2048;
       source.connect(analyser);
       const buffer = new Float32Array(analyser.fftSize);
       const session = {
@@ -1168,6 +1174,7 @@ function App({ user, onSignOut }) {
         rootSamples: [],
         rafId: 0,
         silentFrames: 0,
+        lastInterval: null,
         root: ''
       };
       ragaSessionRef.current = session;
@@ -1178,7 +1185,8 @@ function App({ user, onSignOut }) {
         const frequency = detectPitch(buffer, audioContext.sampleRate);
         if (frequency) {
           const detected = frequencyToNote(frequency);
-          if (!isStableDetectedPitch(detected)) {
+          if (!isStableDetectedPitch(detected, session.root ? 52 : 44)) {
+            session.silentFrames += 1;
             session.rafId = requestAnimationFrame(tick);
             return;
           }
@@ -1216,21 +1224,25 @@ function App({ user, onSignOut }) {
           session.heard.push({ note: detected.note, frequency, interval });
           session.silentFrames = 0;
           const heardSwaras = cleanDetectedSwaras(summarizeStableHeardIntervals(session.heard));
-          setRagaDetector((current) => ({
-            ...current,
-            status: 'listening',
-            heardNotes: summarizeHeardNotes(session.heard).slice(0, 6),
-            heardSwaras,
-            stage: `Listening... latest note ${detected.note} = ${intervalLabels[interval]}.`,
-            processLog: [
-              'Mic connected.',
-              `Sa locked from your voice: ${session.root}.`,
-              'Comparing against Shyam 20 recorded baseline.',
-              `Detected swaras so far: ${heardSwaras.map((item) => item.swara).join(' ') || 'waiting...'}`,
-              'Tap Stop & Identify after Arohana and Avarohana.'
-            ],
-            error: ''
-          }));
+          const shouldRefreshUi = interval !== session.lastInterval || session.heard.length % 5 === 0;
+          session.lastInterval = interval;
+          if (shouldRefreshUi) {
+            setRagaDetector((current) => ({
+              ...current,
+              status: 'listening',
+              heardNotes: summarizeHeardNotes(session.heard).slice(0, 6),
+              heardSwaras,
+              stage: `Listening... latest note ${detected.note} = ${intervalLabels[interval]}.`,
+              processLog: [
+                'Mic connected.',
+                `Sa locked from your voice: ${session.root}.`,
+                'Comparing against Shyam 20 recorded baseline.',
+                `Detected swaras so far: ${heardSwaras.map((item) => item.swara).join(' ') || 'waiting...'}`,
+                'Tap Stop & Identify after Arohana and Avarohana.'
+              ],
+              error: ''
+            }));
+          }
         } else {
           session.silentFrames += 1;
           if (session.silentFrames === 45) {
@@ -2903,7 +2915,8 @@ function summarizeStableHeardIntervals(heard) {
   const intervals = summarizeHeardIntervals(heard);
   if (!intervals.length) return [];
   const maxCount = Math.max(...intervals.map((item) => item.count));
-  const minimumCount = Math.max(3, Math.ceil(maxCount * 0.08));
+  const totalCount = intervals.reduce((sum, item) => sum + item.count, 0);
+  const minimumCount = Math.max(2, Math.ceil(maxCount * 0.045), Math.ceil(totalCount * 0.01));
   return intervals.filter((item) => item.count >= minimumCount);
 }
 
@@ -3038,6 +3051,53 @@ function longestCommonSubsequenceLength(source, target) {
   return previous[target.length];
 }
 
+function ragaIdentityPhraseIntervals(raga) {
+  const name = normalizeRagaSearchText(raga.name);
+  const phrases = {
+    anandabhairavi: [
+      [0, 3, 2, 3, 5],
+      [3, 2, 3, 5],
+      [7, 9, 7],
+      [10, 9, 7, 5, 3, 2, 0]
+    ],
+    reetigowla: [
+      [0, 3, 2, 3, 5],
+      [5, 10, 9, 5, 10],
+      [5, 3, 5, 7, 5, 3, 2, 0]
+    ],
+    kedaragowla: [
+      [0, 2, 5, 7, 10],
+      [10, 9, 7, 5, 4, 2, 0]
+    ],
+    kambhoji: [
+      [0, 2, 4, 5, 7, 9],
+      [10, 9, 7, 5, 4, 2, 0]
+    ],
+    bilahari: [
+      [0, 2, 4, 7, 9],
+      [11, 9, 7, 5, 4, 2, 0]
+    ],
+    mayamalavagowla: [
+      [0, 1, 4, 5, 7, 8, 11],
+      [11, 8, 7, 5, 4, 1, 0],
+      [1, 4, 5]
+    ],
+    saveri: [
+      [0, 1, 5, 7, 8],
+      [11, 8, 7, 5, 4, 1, 0],
+      [1, 5, 7, 8]
+    ]
+  };
+  return phrases[name] || [];
+}
+
+function bestIdentityPhraseCoverage(heardSequence, phrases) {
+  if (!heardSequence.length || !phrases.length) return 0;
+  return Math.max(...phrases.map((phrase) => (
+    longestCommonSubsequenceLength(heardSequence, phrase) / Math.max(phrase.length, 1)
+  )));
+}
+
 function matchRagas(heardIntervals, candidates = ragas, heardSequence = []) {
   const heardSet = new Set(heardIntervals);
   return candidates
@@ -3046,6 +3106,8 @@ function matchRagas(heardIntervals, candidates = ragas, heardSequence = []) {
       const targetSet = new Set(target);
       const targetSequence = ragaIntervalSequence(raga);
       const signature = raga.signatureIntervals || ragaSignatureIntervals(raga);
+      const identityPhrases = ragaIdentityPhraseIntervals(raga);
+      const phraseCoverage = bestIdentityPhraseCoverage(heardSequence, identityPhrases);
       const matched = target.filter((interval) => heardSet.has(interval));
       const missing = target.filter((interval) => !heardSet.has(interval));
       const extra = [...heardSet].filter((interval) => !targetSet.has(interval));
@@ -3062,9 +3124,12 @@ function matchRagas(heardIntervals, candidates = ragas, heardSequence = []) {
       const orderedWeight = heardSequence.length >= 5 ? 0.45 : 0.15;
       const unorderedWeight = 1 - orderedWeight;
       const sequencePenalty = heardSequence.length >= 5 ? Math.max(0, 0.82 - sequenceCoverage) * 0.35 : 0.12;
+      const phraseBonus = phraseCoverage >= 0.75 ? phraseCoverage * 0.24 : phraseCoverage * 0.08;
+      const phrasePenalty = identityPhrases.length && phraseCoverage < 0.45 ? 0.12 : 0;
       const blendedCoverage = coverage * unorderedWeight + sequenceCoverage * orderedWeight;
-      const score = Math.max(0, Math.round((blendedCoverage - missingPenalty * 0.2 - extraPenalty * 1.05 - sparsePenalty - signaturePenalty - chromaticPenalty - sequencePenalty) * 100));
-      const strong = score >= 88 && sequenceCoverage >= 0.9 && extra.length <= 1 && missing.length <= 1 && heardSet.size >= Math.min(5, target.length) && signatureMissing.length === 0;
+      const score = Math.max(0, Math.round((blendedCoverage + phraseBonus - missingPenalty * 0.2 - extraPenalty * 1.05 - sparsePenalty - signaturePenalty - chromaticPenalty - sequencePenalty - phrasePenalty) * 100));
+      const phraseStrong = phraseCoverage >= 0.82 && score >= 72 && extra.length <= 3 && missing.length <= 2;
+      const strong = (score >= 88 && sequenceCoverage >= 0.9 && extra.length <= 1 && missing.length <= 1 && heardSet.size >= Math.min(5, target.length) && signatureMissing.length === 0) || phraseStrong;
       return {
         id: raga.id,
         ragaId: raga.ragaId || raga.id,
@@ -3072,6 +3137,7 @@ function matchRagas(heardIntervals, candidates = ragas, heardSequence = []) {
         system: raga.system,
         score,
         sequenceScore: Math.round(sequenceCoverage * 100),
+        phraseScore: Math.round(phraseCoverage * 100),
         strong,
         matched: matched.map((interval) => intervalLabels[interval]),
         missing: missing.map((interval) => intervalLabels[interval]),
