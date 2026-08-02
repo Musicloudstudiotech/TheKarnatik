@@ -228,6 +228,8 @@ button {
   border: 1px solid rgba(255, 255, 255, 0.45);
   border-radius: 7px;
   padding: 11px 15px;
+  background: transparent;
+  cursor: pointer;
 }
 
 .landing-hero {
@@ -322,6 +324,7 @@ button {
   border: 1px solid rgba(255, 255, 255, 0.48);
   color: white;
   background: rgba(6, 24, 27, 0.32);
+  cursor: pointer;
 }
 
 .landing-image-note {
@@ -619,6 +622,24 @@ button {
   font-size: 30px;
   font-weight: 500;
   letter-spacing: 0;
+}
+
+.landing-session h3 {
+  overflow-wrap: anywhere;
+  font-size: 25px;
+}
+
+.landing-session > p:not(.landing-session-label) {
+  margin: 0 0 8px;
+  color: #657073;
+}
+
+.landing-session-label {
+  margin: 0;
+  color: #a33f31;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
 }
 
 .landing-login label {

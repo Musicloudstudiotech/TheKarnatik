@@ -860,7 +860,7 @@ function App({ user, onSignOut }) {
 
   function navigateToPage(page) {
     setActivePage(page);
-    const path = page === 'kanban' ? '/Kanban' : '/';
+    const path = page === 'kanban' ? '/Kanban' : '/app';
     window.history.pushState({ activePage: page }, '', path);
   }
 
@@ -4857,6 +4857,8 @@ const legacyVoices = [
 ];
 
 function LandingPage({
+  user,
+  onOpenWorkspace,
   email,
   setEmail,
   password,
@@ -4878,7 +4880,11 @@ function LandingPage({
           <a href="#legacy">Legacy</a>
           <a href="#beta">Private beta</a>
         </nav>
-        <a className="landing-enter" href="#beta">Sign in <ArrowRight size={17} /></a>
+        {user ? (
+          <button className="landing-enter" type="button" onClick={onOpenWorkspace}>Open workspace <ArrowRight size={17} /></button>
+        ) : (
+          <a className="landing-enter" href="#beta">Sign in <ArrowRight size={17} /></a>
+        )}
       </header>
 
       <section className="landing-hero" id="top">
@@ -4890,7 +4896,11 @@ function LandingPage({
           <p className="landing-intro">A new home for learning, practising, preserving, and understanding the many traditions of Indian music.</p>
           <div className="landing-hero-actions">
             <a className="landing-primary" href="#story">Discover the story <ArrowRight size={18} /></a>
-            <a className="landing-secondary" href="#beta">Enter private beta</a>
+            {user ? (
+              <button className="landing-secondary" type="button" onClick={onOpenWorkspace}>Open workspace</button>
+            ) : (
+              <a className="landing-secondary" href="#beta">Enter private beta</a>
+            )}
           </div>
         </div>
         <p className="landing-image-note">An imagined Mysuru durbar, where musical traditions met under royal patronage.</p>
@@ -4965,39 +4975,48 @@ function LandingPage({
           <h2>Help shape the next home for Indian music.</h2>
           <p>Our first circle brings musicians, teachers, and serious learners into the product while the listening intelligence continues to learn.</p>
         </div>
-        <form className="landing-login" onSubmit={handleAuth}>
-          <h3>Enter the beta</h3>
-          <label>
-            Email
-            <input
-              value={email}
-              onChange={(event) => {
-                setEmail(event.target.value);
-              }}
-              placeholder="you@example.com"
-              type="email"
-              autoComplete="email"
-              required
-            />
-          </label>
-          <label>
-            Password
-            <input
-              value={password}
-              onChange={(event) => {
-                setPassword(event.target.value);
-              }}
-              placeholder="Minimum 6 characters"
-              type="password"
-              autoComplete="current-password"
-              required
-              minLength={6}
-            />
-          </label>
-          {error ? <p className="access-error">{error}</p> : null}
-          {message ? <p className="access-message">{message}</p> : null}
-          <button type="submit" disabled={submitting}>{submitting ? 'Please wait...' : <>Sign in <ArrowRight size={18} /></>}</button>
-        </form>
+        {user ? (
+          <div className="landing-login landing-session">
+            <p className="landing-session-label">Signed in as</p>
+            <h3>{user.email}</h3>
+            <p>Your practice workspace is ready.</p>
+            <button type="button" onClick={onOpenWorkspace}>Open workspace <ArrowRight size={18} /></button>
+          </div>
+        ) : (
+          <form className="landing-login" onSubmit={handleAuth}>
+            <h3>Enter the beta</h3>
+            <label>
+              Email
+              <input
+                value={email}
+                onChange={(event) => {
+                  setEmail(event.target.value);
+                }}
+                placeholder="you@example.com"
+                type="email"
+                autoComplete="email"
+                required
+              />
+            </label>
+            <label>
+              Password
+              <input
+                value={password}
+                onChange={(event) => {
+                  setPassword(event.target.value);
+                }}
+                placeholder="Minimum 6 characters"
+                type="password"
+                autoComplete="current-password"
+                required
+                minLength={6}
+              />
+            </label>
+            {error ? <p className="access-error">{error}</p> : null}
+            {message ? <p className="access-message">{message}</p> : null}
+            <button type="submit" disabled={submitting}>{submitting ? 'Please wait...' : <>Sign in <ArrowRight size={18} /></>}</button>
+          </form>
+        )}
       </section>
 
       <footer className="landing-footer">
@@ -5014,6 +5033,10 @@ function LandingPage({
 
 function AuthGate() {
   const [session, setSession] = useState(null);
+  const [workspaceOpen, setWorkspaceOpen] = useState(() => {
+    const path = window.location.pathname.toLowerCase();
+    return path.startsWith('/app') || path === '/kanban';
+  });
   const [loading, setLoading] = useState(isSupabaseConfigured);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -5046,6 +5069,15 @@ function AuthGate() {
     };
   }, []);
 
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname.toLowerCase();
+      setWorkspaceOpen(path.startsWith('/app') || path === '/kanban');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   async function handleAuth(event) {
     event.preventDefault();
     if (!supabase) return;
@@ -5065,6 +5097,8 @@ function AuthGate() {
     }
 
     setMessage('Signed in.');
+    window.history.replaceState({}, '', '/app');
+    setWorkspaceOpen(true);
   }
 
   async function signOut() {
@@ -5072,6 +5106,13 @@ function AuthGate() {
       await supabase.auth.signOut();
     }
     setSession(null);
+    window.history.replaceState({}, '', '/');
+    setWorkspaceOpen(false);
+  }
+
+  function openWorkspace() {
+    window.history.pushState({}, '', '/app');
+    setWorkspaceOpen(true);
   }
 
   if (loading) {
@@ -5085,7 +5126,7 @@ function AuthGate() {
     );
   }
 
-  if (session) {
+  if (session && workspaceOpen) {
     return <App user={session.user} onSignOut={signOut} />;
   }
 
@@ -5107,6 +5148,8 @@ function AuthGate() {
 
   return (
     <LandingPage
+      user={session?.user || null}
+      onOpenWorkspace={openWorkspace}
       email={email}
       setEmail={(value) => {
         setEmail(value);
