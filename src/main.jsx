@@ -12,6 +12,7 @@ import {
   ClipboardList,
   LockKeyhole,
   LogOut,
+  Mail,
   MapPin,
   MessageCircle,
   Mic,
@@ -21,6 +22,7 @@ import {
   Pause,
   Play,
   Plus,
+  Phone,
   Search,
   Send,
   Sparkles,
@@ -4973,6 +4975,11 @@ function LandingPage({
           <p className="landing-section-label">Karnatik.ai private beta</p>
           <h2>Help shape the next home for Indian music.</h2>
           <p>Our first circle brings musicians, teachers, and serious learners into the product while the listening intelligence continues to learn.</p>
+          <div className="landing-contact">
+            <p>For more details about Karnatik.ai, please reach out.</p>
+            <a href="mailto:ramanujan.mk@musicloudstudio.com"><Mail size={18} /> ramanujan.mk@musicloudstudio.com</a>
+            <a href="tel:+918861003111"><Phone size={18} /> +91 88610 03111</a>
+          </div>
         </div>
         {user ? (
           <div className="landing-login landing-session">

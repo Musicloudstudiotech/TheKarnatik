@@ -387,7 +387,7 @@ button {
 .landing-origin-copy > p:last-child,
 .landing-patronage-copy p,
 .landing-future > p:not(.landing-section-label),
-.landing-beta-copy > p:last-child {
+.landing-beta-copy > p:not(.landing-section-label) {
   margin: 0;
   color: #556063;
   font-size: 19px;
@@ -599,10 +599,42 @@ button {
   line-height: 1.06;
 }
 
-.landing-beta-copy > p:last-child {
+.landing-beta-copy > p:not(.landing-section-label) {
   max-width: 650px;
   margin-top: 26px;
   color: rgba(255, 255, 255, 0.78);
+}
+
+.landing-contact {
+  display: grid;
+  gap: 12px;
+  margin-top: 36px;
+  padding-top: 26px;
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.landing-contact p {
+  margin: 0 0 2px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.landing-contact a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  max-width: 100%;
+  color: white;
+  font-size: 16px;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
+.landing-contact a:hover {
+  color: #ffd68b;
 }
 
 .landing-login {
