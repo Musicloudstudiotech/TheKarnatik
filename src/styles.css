@@ -3189,7 +3189,7 @@ h3 {
 
 .ragadna-strength-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 10px;
   margin-bottom: 14px;
 }
@@ -3225,6 +3225,44 @@ h3 {
   color: #4e575a;
   font-size: 12px;
   line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.clock-zero-panel {
+  border: 1px solid rgba(7, 91, 97, 0.22);
+  border-radius: 8px;
+  background: rgba(223, 236, 235, 0.44);
+  padding: 14px;
+  margin-bottom: 14px;
+  display: grid;
+  gap: 5px;
+}
+
+.clock-zero-panel span,
+.clock-zero-panel small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.clock-zero-panel strong {
+  color: var(--teal-dark);
+  font-size: 22px;
+}
+
+.clock-zero-panel p {
+  margin: 0;
+  color: #3d4649;
+  font-weight: 700;
+}
+
+.ragadna-match-table small {
+  display: block;
+  color: var(--muted);
+  font-weight: 800;
+  margin-top: 4px;
   overflow-wrap: anywhere;
 }
 

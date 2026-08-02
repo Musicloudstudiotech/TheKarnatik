@@ -424,7 +424,16 @@ const shyamPilotRagas = shyamRecordedSamples.map((sample) => {
 
 const allRagaDnaRagas = buildRagaDnaCandidates(ragadnaManifest.entries, shyamPilotRagas);
 const ragaDnaFeatures = ragadnaFeatureModel.features || [];
+const ragaDnaSourceCounts = (ragadnaManifest.entries || []).reduce((acc, entry) => {
+  acc[entry.sourceSet] = (acc[entry.sourceSet] || 0) + 1;
+  return acc;
+}, {});
 const ragaDnaDatasetLabel = `${ragadnaFeatureModel.totalClips || ragadnaManifest.summary?.total || allRagaDnaRagas.length} RagaDNA samples`;
+const ragaDnaDatasetDetail = [
+  ragaDnaSourceCounts['shyam-20-baseline'] ? `${ragaDnaSourceCounts['shyam-20-baseline']} Shyam baseline` : '',
+  ragaDnaSourceCounts['test-ragas-2026-07-21'] ? `${ragaDnaSourceCounts['test-ragas-2026-07-21']} Test Ragas` : '',
+  ragaDnaSourceCounts['random-raga-aarohanam-avarohanam'] ? `${ragaDnaSourceCounts['random-raga-aarohanam-avarohanam']} Random Raga Sets` : ''
+].filter(Boolean).join(' + ');
 
 const ragaDnaAnalysisNotes = [
   {
@@ -775,6 +784,10 @@ function App({ user, onSignOut }) {
     rejectedSwaras: [],
     evidenceFrames: [],
     evidencePath: [],
+    syllables: [],
+    syllableTranscript: '',
+    syllableStatus: '',
+    pitchSyllables: [],
     analysisSummary: '',
     matches: [],
     stage: 'Ready: sing Sa, then Arohana and Avarohana slowly.',
@@ -1230,6 +1243,10 @@ function App({ user, onSignOut }) {
         rejectedSwaras: [],
         evidenceFrames: [],
         evidencePath: [],
+        syllables: [],
+        syllableTranscript: '',
+        syllableStatus: 'starting',
+        pitchSyllables: [],
         analysisSummary: '',
         matches: [],
         stage: 'Listening. I will lock Sa from your first steady note.',
@@ -1338,7 +1355,7 @@ function App({ user, onSignOut }) {
               processLog: [
                 'Mic connected.',
                 `Sa locked from your voice: ${session.root}.`,
-                `Comparing against ${ragaDnaDatasetLabel}.`,
+                `Comparing against ${ragaDnaDatasetLabel}: ${ragaDnaDatasetDetail}.`,
                 describeSyllableLayer(session),
                 `Detected swaras so far: ${heardSwaras.map((item) => item.swara).join(' ') || 'waiting...'}`,
                 'Tap Stop & Identify after Arohana and Avarohana.'
@@ -1406,6 +1423,10 @@ function App({ user, onSignOut }) {
         rejectedSwaras: swaraEvidence.rejected,
         evidenceFrames,
         evidencePath: [],
+        syllables: session.syllables,
+        syllableTranscript: session.syllableTranscript,
+        syllableStatus: session.syllableStatus,
+        pitchSyllables: [],
         analysisSummary: session.root
           ? `Sa was detected as ${session.root}, but there were not enough stable held notes for a raga decision.`
           : 'Sa was not locked, so the raga decision was skipped.',
@@ -1415,7 +1436,7 @@ function App({ user, onSignOut }) {
           'Mic connected.',
           'Listening stopped by you.',
           session.root ? `Detected Sa from voice: ${session.root}.` : 'I could not lock a stable Sa from the first note.',
-          `I did not get enough stable Arohana/Avarohana notes to compare against ${ragaDnaDatasetLabel}.`
+          `I did not get enough stable Arohana/Avarohana notes to compare against ${ragaDnaDatasetLabel}: ${ragaDnaDatasetDetail}.`
         ],
         error: session.root
           ? `Sa detected: ${session.root}. Raga not detected yet. Try singing clear Arohana and Avarohana slowly.`
@@ -1428,6 +1449,7 @@ function App({ user, onSignOut }) {
     const heardSequence = compactHeardIntervalSequence(heardSegments, cleanedIntervals);
     const syllableSequence = buildSyllableIntervalSequence(session.syllables, cleanedIntervals);
     const evidenceSequence = mergeEvidenceSequence(heardSequence, syllableSequence);
+    const pitchSyllables = deriveSyllableLabelsFromIntervals(evidenceSequence);
     const matches = matchRagas(heardSwaras, allRagaDnaRagas, evidenceSequence, syllableEvidence, ragaDnaFeatures);
     const confirmedMatch = matches.find((match) => match.strong);
     const madhyamamDiagnosis = describeMadhyamamCapture(heardSwaras, session.root);
@@ -1441,6 +1463,10 @@ function App({ user, onSignOut }) {
       rejectedSwaras: swaraEvidence.rejected,
       evidenceFrames,
       evidencePath: evidenceSequence,
+      syllables: session.syllables,
+      syllableTranscript: session.syllableTranscript,
+      syllableStatus: session.syllableStatus,
+      pitchSyllables,
       analysisSummary,
       matches,
       stage: confirmedMatch
@@ -1452,8 +1478,9 @@ function App({ user, onSignOut }) {
         'Mic connected.',
         'Listening stopped by you.',
         `Sa detected from your voice: ${session.root}.`,
-        `Compared against ${ragaDnaDatasetLabel}.`,
+        `Compared against ${ragaDnaDatasetLabel}: ${ragaDnaDatasetDetail}.`,
         describeSyllableLayer(session, true),
+        `Clock 0 fallback path: ${pitchSyllables.join(' ') || 'not available'}.`,
         `Heard swaras: ${heardSwaras.map((item) => item.swara).join(' ')}.`,
         madhyamamDiagnosis,
         `Heard scale path: ${evidenceSequence.map((interval) => intervalLabels[interval]).join(' ') || 'not enough ordered notes'}.`,
@@ -1937,6 +1964,11 @@ function RagaDnaPage({ ragaDetector, startRagaDetection, selected, pitch }) {
 
           <div className="ragadna-strength-grid">
             <article>
+              <span>Sample Library</span>
+              <strong>{ragaDnaDatasetLabel}</strong>
+              <p>{ragaDnaDatasetDetail || 'Manifest source breakdown pending.'}</p>
+            </article>
+            <article>
               <span>Accepted for Decision</span>
               <strong>{ragaDetector.heardSwaras?.length || 0}</strong>
               <p>{formatSwaraCounts(ragaDetector.heardSwaras) || 'Waiting for stable held notes.'}</p>
@@ -1951,6 +1983,13 @@ function RagaDnaPage({ ragaDetector, startRagaDetection, selected, pitch }) {
               <strong>{topMatch?.name || 'Pending'}</strong>
               <p>{topMatch ? `${topMatch.score}% score, ${topMatch.fingerprintScore || 0}% sample fingerprint.` : 'No completed run yet.'}</p>
             </article>
+          </div>
+
+          <div className="clock-zero-panel">
+            <span>Clock 0 Syllable Layer</span>
+            <strong>{formatClockZeroStatus(ragaDetector)}</strong>
+            <p>Parsed: {ragaDetector.syllables?.map((item) => item.label).join(' ') || 'none from speech'} · Fallback path: {ragaDetector.pitchSyllables?.join(' ') || 'pending'}</p>
+            {ragaDetector.syllableTranscript ? <small>Transcript: {ragaDetector.syllableTranscript}</small> : <small>Browser speech returned no usable sung swara text.</small>}
           </div>
 
           {ragaDetector.evidenceFrames?.length > 0 ? (
@@ -1990,6 +2029,7 @@ function RagaDnaPage({ ragaDetector, startRagaDetection, selected, pitch }) {
                   <strong>{match.name}</strong>
                   <span>{match.score}% · Path {match.sequenceScore}% · Fingerprint {match.fingerprintScore || 0}%</span>
                   <p>Matched {match.matched.join(' ') || 'none'} · Missing {match.missing.join(' ') || 'none'} · Extra {match.extra.join(' ') || 'none'}</p>
+                  {match.bestSampleId ? <small>Closest sample: {match.bestSampleId}</small> : null}
                   {match.confusionNotes?.length ? <em>{match.confusionNotes.join(' ')}</em> : null}
                 </article>
               ))}
@@ -3383,20 +3423,26 @@ function startSwaraSyllableRecognition(onChange) {
   const recognition = new SpeechRecognitionClass();
   recognition.continuous = true;
   recognition.interimResults = true;
+  recognition.maxAlternatives = 5;
   recognition.lang = 'en-IN';
   let finalTranscript = '';
   let lastTranscript = '';
   recognition.onresult = (event) => {
     let interimTranscript = '';
+    const alternatives = [];
     for (let index = event.resultIndex; index < event.results.length; index += 1) {
       const text = event.results[index][0]?.transcript || '';
+      for (let altIndex = 0; altIndex < event.results[index].length; altIndex += 1) {
+        const altText = event.results[index][altIndex]?.transcript || '';
+        if (altText) alternatives.push(altText);
+      }
       if (event.results[index].isFinal) {
         finalTranscript += ` ${text}`;
       } else {
         interimTranscript += ` ${text}`;
       }
     }
-    lastTranscript = `${finalTranscript} ${interimTranscript}`.trim();
+    lastTranscript = `${finalTranscript} ${interimTranscript} ${alternatives.join(' ')}`.trim();
     onChange({ syllables: parseSwaraSyllables(lastTranscript), transcript: lastTranscript, status: 'active' });
   };
   recognition.onstart = () => onChange({ syllables: [], transcript: '', status: 'active' });
@@ -3430,10 +3476,18 @@ function parseSwaraSyllables(transcript = '') {
     .split(/\s+/)
     .filter(Boolean);
 
-  return cleaned
-    .map((token) => swaraSyllableFromToken(token))
-    .filter(Boolean)
-    .map((label, index) => ({ label, index }));
+  const tokenMatches = [];
+  cleaned.forEach((token, tokenIndex) => {
+    const direct = swaraSyllableFromToken(token);
+    if (direct) {
+      tokenMatches.push({ label: direct, index: tokenIndex * 10 });
+      return;
+    }
+    parseCompactSwaraToken(token).forEach((label, compactIndex) => {
+      tokenMatches.push({ label, index: tokenIndex * 10 + compactIndex });
+    });
+  });
+  return dedupeNearbySyllables(tokenMatches);
 }
 
 function dedupeNearbySyllables(items) {
@@ -3453,6 +3507,33 @@ function swaraSyllableFromToken(token) {
   if (['da', 'daa', 'dha', 'dhaa', 'the'].includes(normalized)) return 'D';
   if (['ni', 'nee', 'nigh', 'knee'].includes(normalized)) return 'N';
   return null;
+}
+
+function parseCompactSwaraToken(token = '') {
+  const chunks = [
+    ['dhaa', 'D'], ['dha', 'D'], ['daa', 'D'], ['da', 'D'],
+    ['saa', 'S'], ['sa', 'S'], ['sha', 'S'],
+    ['ree', 'R'], ['rhea', 'R'], ['ri', 'R'], ['re', 'R'], ['ray', 'R'],
+    ['gaa', 'G'], ['gah', 'G'], ['ga', 'G'],
+    ['maa', 'M'], ['mah', 'M'], ['ma', 'M'],
+    ['paa', 'P'], ['pah', 'P'], ['pa', 'P'],
+    ['nee', 'N'], ['knee', 'N'], ['nigh', 'N'], ['ni', 'N']
+  ];
+  const labels = [];
+  let index = 0;
+  let consumed = 0;
+  while (index < token.length) {
+    const match = chunks.find(([chunk]) => token.startsWith(chunk, index));
+    if (!match) {
+      index += 1;
+      continue;
+    }
+    labels.push(match[1]);
+    consumed += match[0].length;
+    index += match[0].length;
+  }
+  const coverage = consumed / Math.max(token.length, 1);
+  return labels.length >= 2 && coverage >= 0.72 ? labels : [];
 }
 
 function describeSyllableLayer(session, final = false) {
@@ -3682,6 +3763,28 @@ function describeMadhyamamCapture(heardSwaras, root) {
     return `Madhyamam captured as M1 (${m1Note}) - Shankarabharanam/Bilahari side, not Kalyani.`;
   }
   return `Madhyamam was not captured clearly. For ${root} Sa: M1 is ${m1Note}, M2 is ${m2Note}.`;
+}
+
+function deriveSyllableLabelsFromIntervals(intervals = []) {
+  const labels = intervals.map((interval) => {
+    if (interval === 0) return 'S';
+    if ([1, 2, 3].includes(interval)) return 'R';
+    if (interval === 4) return 'G';
+    if ([5, 6].includes(interval)) return 'M';
+    if (interval === 7) return 'P';
+    if ([8, 9, 10].includes(interval)) return 'D';
+    if (interval === 11) return 'N';
+    return '';
+  }).filter(Boolean);
+  return labels.filter((label, index) => index === 0 || label !== labels[index - 1]);
+}
+
+function formatClockZeroStatus(ragaDetector) {
+  if (ragaDetector.syllables?.length) return 'Speech syllables captured';
+  if (ragaDetector.syllableTranscript) return 'Speech heard text, no swaras parsed';
+  if (ragaDetector.syllableStatus === 'not-supported') return 'Browser speech not supported';
+  if (ragaDetector.syllableStatus) return `Speech status: ${ragaDetector.syllableStatus}`;
+  return 'Waiting for detection';
 }
 
 function normalizeRagaSearchText(value = '') {
@@ -3978,11 +4081,15 @@ function matchRagas(heardInput, candidates = ragas, heardSequence = [], syllable
       const phrasePenalty = identityPhrases.length && phraseCoverage < 0.45 ? 0.12 : 0;
       const blendedCoverage = coverage * unorderedWeight + sequenceCoverage * orderedWeight;
       const grammarScore = Math.round((blendedCoverage + phraseBonus - missingPenalty * 0.2 - extraPenalty * 1.05 - sparsePenalty - signaturePenalty - chromaticPenalty - sequencePenalty - phrasePenalty) * 100);
-      const fingerprintBoost = fingerprint && heardSequence.length >= 5
-        ? Math.round((fingerprint.score - grammarScore) * Math.min(0.34, Math.max(0.12, fingerprint.pathScore / 300)))
+      const fingerprintAgreement = fingerprint && heardSequence.length >= 5
+        ? Math.min(0.48, Math.max(0.16, fingerprint.pathScore / 240))
         : 0;
+      const fingerprintBoost = fingerprintAgreement
+        ? Math.round((fingerprint.score - grammarScore) * fingerprintAgreement)
+        : 0;
+      const samplePathBonus = fingerprint?.score >= 82 && fingerprint?.pathScore >= 78 ? 8 : 0;
       const rawScore = grammarScore + fingerprintBoost;
-      const score = Math.min(100, Math.max(0, rawScore));
+      const score = Math.min(100, Math.max(0, rawScore + samplePathBonus));
       const phraseStrong = phraseCoverage >= 0.82 && score >= 72 && extra.length <= 3 && missing.length <= 2;
       const strong = (score >= 88 && sequenceCoverage >= 0.9 && extra.length <= 1 && missing.length <= 1 && heardSet.size >= Math.min(5, target.length) && signatureMissing.length === 0) || phraseStrong;
       return {
@@ -3994,6 +4101,7 @@ function matchRagas(heardInput, candidates = ragas, heardSequence = [], syllable
         fingerprintScore: fingerprint?.score || 0,
         fingerprintPathScore: fingerprint?.pathScore || 0,
         fingerprintSamples: fingerprint?.sampleCount || 0,
+        bestSampleId: fingerprint?.bestSampleId || '',
         score,
         sequenceScore: Math.round(sequenceCoverage * 100),
         phraseScore: Math.round(phraseCoverage * 100),
