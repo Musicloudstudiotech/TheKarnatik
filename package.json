@@ -2,9 +2,12 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
-    "preview": "vite --host 0.0.0.0"
+    "preview": "vite --host 0.0.0.0",
+    "ragadna:manifest": "node scripts/build-ragadna-manifest.mjs",
+    "ragadna:accuracy": "node scripts/ragadna-accuracy.mjs"
   },
   "dependencies": {
+    "@audio/pitch": "^2.0.3",
     "@supabase/supabase-js": "^2.110.0",
     "@vitejs/plugin-react": "latest",
     "lucide-react": "latest",

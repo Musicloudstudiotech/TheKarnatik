@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { mcleod, yin } from '@audio/pitch';
 import {
   BookOpen,
   CalendarDays,
   ChevronDown,
-  CheckCircle2,
   Clock3,
   Compass,
   ClipboardList,
@@ -21,7 +21,6 @@ import {
   Plus,
   Search,
   Send,
-  Settings,
   Sparkles,
   Star,
   Ticket,
@@ -43,11 +42,20 @@ import {
   ragas,
   swaraLegend
 } from './data/ragaDatabase.js';
+import ragadnaManifest from '../public/ragadna/ragadna-manifest.json';
+import ragadnaFeatureModel from '../data/raga-samples/ragadna-feature-model.json';
 
 const chromatic = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-const tamburaSamples = ['C', 'C#', 'D', 'E', 'F', 'G', 'A', 'B'];
-const tamburaAssetNames = { 'C#': 'Csharp' };
+const tamburaSamples = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const tamburaMaSamples = ['E', 'F', 'F#', 'G', 'G#'];
+const tamburaAssetNames = {
+  'C#': 'Csharp',
+  'D#': 'Dsharp',
+  'F#': 'Fsharp',
+  'G#': 'Gsharp',
+  'A#': 'Asharp'
+};
 const tamburaLoopSettings = {
   A: { startTrim: 1, tailTrim: 1.2, crossfade: 2.4 },
   B: { startTrim: 0.85, tailTrim: 1.2, crossfade: 2.4 },
@@ -56,8 +64,10 @@ const tamburaLoopSettings = {
   D: { startTrim: 1.5, tailTrim: 2.5, crossfade: 2.8 },
   E: { startTrim: 1.5, tailTrim: 2, crossfade: 2.7 },
   F: { startTrim: 0.85, tailTrim: 1.7, crossfade: 2.2 },
+  'F#': { startTrim: 1.2, tailTrim: 2, crossfade: 2.6 },
   G: { startTrim: 0.85, tailTrim: 1.3, crossfade: 2.2 }
 };
+const tamburaBufferCache = new Map();
 const swaraIntervals = {
   S: 0,
   r: 1,
@@ -143,7 +153,6 @@ const hindustaniSwaraDisplayAliases = {
 
 const systems = ['All', 'Hindustani', 'Karnatik'];
 const practiceSteps = ['Arohana-Avarohana', 'Pakad / Chalan', 'Alap Builder', 'Bandish / Kriti'];
-const testTypes = ['Scale', 'Chord', 'Phrase', 'Avoid Notes'];
 const concertListings = [
   {
     id: 'blr-sabha-01',
@@ -387,6 +396,29 @@ const shyamPilotRagas = shyamRecordedSamples.map((sample) => {
     sample
   };
 });
+
+const allRagaDnaRagas = buildRagaDnaCandidates(ragadnaManifest.entries, shyamPilotRagas);
+const ragaDnaFeatures = ragadnaFeatureModel.features || [];
+const ragaDnaDatasetLabel = `${ragadnaFeatureModel.totalClips || ragadnaManifest.summary?.total || allRagaDnaRagas.length} RagaDNA samples`;
+
+const ragaDnaAnalysisNotes = [
+  {
+    title: 'Current Baseline',
+    body: 'Use the conservative detector from the closer test: Sa lock, stable pitch frames, held-note cleanup, ordered path scoring, then raga grammar rules.'
+  },
+  {
+    title: 'Today\'s Finding',
+    body: 'When pitch detection is unstable, raga matching becomes meaningless. First validate Sa Pa Sa and Sa Ga Pa Da Sa before judging raga output.'
+  },
+  {
+    title: 'Do Not Overweight Yet',
+    body: 'Pitch histogram and transition surface are useful, but they should not force an identification until we have clean contour extraction.'
+  },
+  {
+    title: 'Next Engine Step',
+    body: 'Replace the browser autocorrelation pitch tracker with pYIN/YIN-style contour tracking, then reintroduce melodic-surface scoring as debug evidence.'
+  }
+];
 
 const roadmapColumns = [
   {
@@ -678,12 +710,14 @@ function App({ user, onSignOut }) {
   const [selectedId, setSelectedId] = useState('kalyani');
   const [activeStep, setActiveStep] = useState(0);
   const [tanpuraOn, setTanpuraOn] = useState(false);
+  const [tanpuraLoading, setTanpuraLoading] = useState(false);
   const [metronomeOn, setMetronomeOn] = useState(false);
   const [beatCount, setBeatCount] = useState(0);
   const [tempo, setTempo] = useState(60);
   const [metronomeVolume, setMetronomeVolume] = useState(62);
   const [volume, setVolume] = useState(72);
   const [pitch, setPitch] = useState('C#');
+  const [tanpuraMode, setTanpuraMode] = useState('sa-pa');
   const [detector, setDetector] = useState({
     status: 'idle',
     note: 'C#',
@@ -697,9 +731,6 @@ function App({ user, onSignOut }) {
     processLog: ['Ready: click Detect My Sa and sing a steady Sa.'],
     error: ''
   });
-  const [testDifficulty, setTestDifficulty] = useState('Foundation');
-  const [questionCount, setQuestionCount] = useState(6);
-  const [enabledTypes, setEnabledTypes] = useState(['Scale', 'Chord', 'Phrase']);
   const [companionInput, setCompanionInput] = useState('');
   const [companionLoading, setCompanionLoading] = useState(false);
   const [companionError, setCompanionError] = useState('');
@@ -713,6 +744,10 @@ function App({ user, onSignOut }) {
     root: '',
     heardNotes: [],
     heardSwaras: [],
+    rejectedSwaras: [],
+    evidenceFrames: [],
+    evidencePath: [],
+    analysisSummary: '',
     matches: [],
     stage: 'Ready: sing Sa, then Arohana and Avarohana slowly.',
     processLog: ['Ready: click Detect Raga, sing Sa first, then Arohana and Avarohana slowly.'],
@@ -728,11 +763,9 @@ function App({ user, onSignOut }) {
   }, [query, system]);
 
   const selected = ragas.find((raga) => raga.id === selectedId) || filtered[0] || ragas[0];
+  const showLibraryPane = ['practice', 'chords'].includes(activePage);
+  const showCompanionPane = activePage === 'practice';
   const harmony = useMemo(() => getHarmony(selected, pitch), [selected, pitch]);
-  const generatedTest = useMemo(
-    () => buildTest(selected, harmony, pitch, questionCount, enabledTypes, testDifficulty),
-    [selected, harmony, pitch, questionCount, enabledTypes, testDifficulty]
-  );
 
   useEffect(() => {
     if (tanpuraRef.current?.masterGain) {
@@ -745,7 +778,8 @@ function App({ user, onSignOut }) {
       stopTanpura();
       startTanpura();
     }
-  }, [pitch]);
+    preloadTamburaBuffer(pitch, tanpuraMode).catch(() => {});
+  }, [pitch, tanpuraMode]);
 
   useEffect(() => {
     return () => stopTanpura();
@@ -773,18 +807,6 @@ function App({ user, onSignOut }) {
     return () => stopMetronome();
   }, []);
 
-  function toggleType(type) {
-    setEnabledTypes((current) => {
-      if (current.includes(type) && current.length > 1) {
-        return current.filter((item) => item !== type);
-      }
-      if (!current.includes(type)) {
-        return [...current, type];
-      }
-      return current;
-    });
-  }
-
   function setTempoClamped(nextTempo) {
     setTempo(Math.min(240, Math.max(30, nextTempo)));
   }
@@ -794,7 +816,7 @@ function App({ user, onSignOut }) {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextClass) return;
 
-    setTanpuraOn(true);
+    setTanpuraLoading(true);
     const context = new AudioContextClass();
     try {
       await context.resume();
@@ -803,18 +825,18 @@ function App({ user, onSignOut }) {
       masterGain.connect(context.destination);
       masterGain.gain.setTargetAtTime(volumeToGain(volume), context.currentTime, 0.08);
 
-      const sample = nearestTamburaSample(pitch);
-      const assetName = tamburaAssetNames[sample.note] || sample.note;
-      const response = await fetch(`/tambura/${assetName}.wav`);
-      const arrayBuffer = await response.arrayBuffer();
-      const audioBuffer = await context.decodeAudioData(arrayBuffer);
+      const sample = nearestTamburaSample(pitch, tanpuraMode);
+      const audioBuffer = await loadTamburaBuffer(context, pitch, tanpuraMode);
       const drone = { context, masterGain, sources: [], timers: [], stopped: false };
       tanpuraRef.current = drone;
       scheduleTamburaSegments(drone, audioBuffer, sample.rate, sample.note);
+      setTanpuraOn(true);
     } catch (error) {
       context.close();
       tanpuraRef.current = null;
       setTanpuraOn(false);
+    } finally {
+      setTanpuraLoading(false);
     }
   }
 
@@ -822,6 +844,7 @@ function App({ user, onSignOut }) {
     const drone = tanpuraRef.current;
     if (!drone) {
       setTanpuraOn(false);
+      setTanpuraLoading(false);
       return;
     }
     const now = drone.context.currentTime;
@@ -829,13 +852,21 @@ function App({ user, onSignOut }) {
     drone.masterGain.gain.setTargetAtTime(0, now, 0.04);
     drone.stopped = true;
     drone.timers.forEach((timer) => window.clearTimeout(timer));
-    drone.sources.forEach((source) => source.stop(now + 0.16));
+    drone.sources.forEach((source) => {
+      try {
+        source.stop(now + 0.16);
+      } catch {
+        // The pluck may have ended naturally before the user stopped the tanpura.
+      }
+    });
     setTimeout(() => drone.context.close(), 220);
     tanpuraRef.current = null;
     setTanpuraOn(false);
+    setTanpuraLoading(false);
   }
 
   function toggleTanpura() {
+    if (tanpuraLoading) return;
     if (tanpuraOn) {
       stopTanpura();
       return;
@@ -1152,12 +1183,23 @@ function App({ user, onSignOut }) {
         root: '',
         heardNotes: [],
         heardSwaras: [],
+        rejectedSwaras: [],
+        evidenceFrames: [],
+        evidencePath: [],
+        analysisSummary: '',
         matches: [],
         stage: 'Listening. I will lock Sa from your first steady note.',
         processLog: ['Mic connected.', 'Finding Sa from your first steady note.', 'After Sa, sing Arohana and Avarohana slowly. Tap Stop & Identify when done.'],
         error: ''
       });
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+          channelCount: 1
+        }
+      });
       const audioContext = new AudioContext();
       const source = audioContext.createMediaStreamSource(stream);
       const analyser = audioContext.createAnalyser();
@@ -1172,17 +1214,30 @@ function App({ user, onSignOut }) {
         samples: [],
         heard: [],
         rootSamples: [],
+        pitchWindow: [],
+        lastAcceptedFrequency: 0,
         rafId: 0,
         silentFrames: 0,
         lastInterval: null,
-        root: ''
+        root: '',
+        syllables: [],
+        syllableTranscript: '',
+        syllableStatus: 'starting',
+        speechRecognition: null
       };
+      session.speechRecognition = startSwaraSyllableRecognition(({ syllables, transcript, status }) => {
+        session.syllables = syllables;
+        session.syllableTranscript = transcript;
+        session.syllableStatus = status;
+      });
+      if (!session.speechRecognition) session.syllableStatus = 'not-supported';
       ragaSessionRef.current = session;
 
       const tick = () => {
         if (ragaSessionRef.current !== session) return;
         analyser.getFloatTimeDomainData(buffer);
-        const frequency = detectPitch(buffer, audioContext.sampleRate);
+        const rawFrequency = detectPitch(buffer, audioContext.sampleRate);
+        const frequency = smoothDetectedFrequency(session, rawFrequency);
         if (frequency) {
           const detected = frequencyToNote(frequency);
           if (!isStableDetectedPitch(detected, session.root ? 52 : 44)) {
@@ -1210,6 +1265,7 @@ function App({ user, onSignOut }) {
               processLog: [
                 'Mic connected.',
                 session.root ? `Sa locked from your voice: ${session.root}.` : `Finding Sa: ${candidateRoot} at ${Math.round(rootConfidence * 100)}% stability.`,
+                describeSyllableLayer(session),
                 'Now sing Arohana and Avarohana slowly.',
                 'Tap Stop & Identify when done.'
               ],
@@ -1223,7 +1279,8 @@ function App({ user, onSignOut }) {
           const interval = noteToInterval(detected.note, session.root);
           session.heard.push({ note: detected.note, frequency, interval });
           session.silentFrames = 0;
-          const heardSwaras = cleanDetectedSwaras(summarizeStableHeardIntervals(session.heard));
+          const swaraEvidence = selectDecisionSwaras(summarizeStableHeardIntervals(buildHeldSwaraSegments(session.heard)));
+          const heardSwaras = cleanDetectedSwaras(swaraEvidence.kept);
           const shouldRefreshUi = interval !== session.lastInterval || session.heard.length % 5 === 0;
           session.lastInterval = interval;
           if (shouldRefreshUi) {
@@ -1232,11 +1289,13 @@ function App({ user, onSignOut }) {
               status: 'listening',
               heardNotes: summarizeHeardNotes(session.heard).slice(0, 6),
               heardSwaras,
+              rejectedSwaras: swaraEvidence.rejected,
               stage: `Listening... latest note ${detected.note} = ${intervalLabels[interval]}.`,
               processLog: [
                 'Mic connected.',
                 `Sa locked from your voice: ${session.root}.`,
-                'Comparing against Shyam 20 recorded baseline.',
+                `Comparing against ${ragaDnaDatasetLabel}.`,
+                describeSyllableLayer(session),
                 `Detected swaras so far: ${heardSwaras.map((item) => item.swara).join(' ') || 'waiting...'}`,
                 'Tap Stop & Identify after Arohana and Avarohana.'
               ],
@@ -1284,24 +1343,35 @@ function App({ user, onSignOut }) {
     if (!session) return;
 
     cancelAnimationFrame(session.rafId);
+    session.speechRecognition?.stop?.();
     session.stream.getTracks().forEach((track) => track.stop());
     session.audioContext.close();
     ragaSessionRef.current = null;
 
-    const heardSwaras = cleanDetectedSwaras(summarizeStableHeardIntervals(session.heard));
+    const heardSegments = buildHeldSwaraSegments(session.heard);
+    const evidenceFrames = buildEvidenceFrames(heardSegments, session.root, session.syllables);
+    const syllableEvidence = buildSyllableEvidence(session.syllables);
+    const swaraEvidence = selectDecisionSwaras(mergeSyllableIntervals(summarizeStableHeardIntervals(heardSegments), syllableEvidence));
+    const heardSwaras = cleanDetectedSwaras(swaraEvidence.kept);
     if (!session.root || !heardSwaras.length) {
       setRagaDetector({
         status: 'error',
         root: session.root || '',
         heardNotes: [],
         heardSwaras: [],
+        rejectedSwaras: swaraEvidence.rejected,
+        evidenceFrames,
+        evidencePath: [],
+        analysisSummary: session.root
+          ? `Sa was detected as ${session.root}, but there were not enough stable held notes for a raga decision.`
+          : 'Sa was not locked, so the raga decision was skipped.',
         matches: [],
         stage: session.root ? `Could not identify the raga yet. Detected Sa is ${session.root}.` : 'Could not lock Sa yet.',
         processLog: [
           'Mic connected.',
           'Listening stopped by you.',
           session.root ? `Detected Sa from voice: ${session.root}.` : 'I could not lock a stable Sa from the first note.',
-          'I did not get enough stable Arohana/Avarohana notes to compare against Shyam 20.'
+          `I did not get enough stable Arohana/Avarohana notes to compare against ${ragaDnaDatasetLabel}.`
         ],
         error: session.root
           ? `Sa detected: ${session.root}. Raga not detected yet. Try singing clear Arohana and Avarohana slowly.`
@@ -1311,19 +1381,26 @@ function App({ user, onSignOut }) {
     }
 
     const cleanedIntervals = new Set(heardSwaras.map((item) => item.interval));
-    const heardSequence = compactHeardIntervalSequence(session.heard, cleanedIntervals);
-    const matches = matchRagas(heardSwaras.map((item) => item.interval), shyamPilotRagas, heardSequence);
+    const heardSequence = compactHeardIntervalSequence(heardSegments, cleanedIntervals);
+    const syllableSequence = buildSyllableIntervalSequence(session.syllables, cleanedIntervals);
+    const evidenceSequence = mergeEvidenceSequence(heardSequence, syllableSequence);
+    const matches = matchRagas(heardSwaras, allRagaDnaRagas, evidenceSequence, syllableEvidence, ragaDnaFeatures);
     const confirmedMatch = matches.find((match) => match.strong);
     const madhyamamDiagnosis = describeMadhyamamCapture(heardSwaras, session.root);
     const tooManySwaras = heardSwaras.length > 8;
+    const analysisSummary = describeRagaDecision(session.root, evidenceFrames, evidenceSequence, matches);
     setRagaDetector({
       status: 'detected',
       root: session.root,
       heardNotes: summarizeHeardNotes(session.heard).slice(0, 6),
       heardSwaras,
+      rejectedSwaras: swaraEvidence.rejected,
+      evidenceFrames,
+      evidencePath: evidenceSequence,
+      analysisSummary,
       matches,
       stage: confirmedMatch
-        ? `Likely raga: ${confirmedMatch.name} (${confirmedMatch.score}%) from Shyam 20 baseline.`
+        ? `Likely raga: ${confirmedMatch.name} (${confirmedMatch.score}%) from ${ragaDnaDatasetLabel}.`
         : tooManySwaras
           ? `Could not identify confidently. Too many swara variants were detected; Sa may be wrong or the scale was not sung steadily.`
           : `Could not identify the raga yet. Detected Sa is ${session.root}.`,
@@ -1331,10 +1408,11 @@ function App({ user, onSignOut }) {
         'Mic connected.',
         'Listening stopped by you.',
         `Sa detected from your voice: ${session.root}.`,
-        'Compared only against Shyam 20 recorded baseline.',
+        `Compared against ${ragaDnaDatasetLabel}.`,
+        describeSyllableLayer(session, true),
         `Heard swaras: ${heardSwaras.map((item) => item.swara).join(' ')}.`,
         madhyamamDiagnosis,
-        `Heard scale path: ${heardSequence.map((interval) => intervalLabels[interval]).join(' ') || 'not enough ordered notes'}.`,
+        `Heard scale path: ${evidenceSequence.map((interval) => intervalLabels[interval]).join(' ') || 'not enough ordered notes'}.`,
         confirmedMatch ? `Top match: ${confirmedMatch.name} at ${confirmedMatch.score}%.` : 'No confident raga match. Hold Sa first, then sing the scale one note at a time.'
       ],
       error: ''
@@ -1351,6 +1429,8 @@ function App({ user, onSignOut }) {
         <nav className="nav">
           <button className={`nav-item ${activePage === 'practice' ? 'active' : ''}`} onClick={() => setActivePage('practice')}><Compass size={17} /> Practice</button>
           <button className="nav-item"><Library size={17} /> Library</button>
+          <button className={`nav-item ${activePage === 'raga-dna' ? 'active' : ''}`} onClick={() => setActivePage('raga-dna')}><Search size={17} /> RagaDNA</button>
+          <button className={`nav-item ${activePage === 'shruthi' ? 'active' : ''}`} onClick={() => setActivePage('shruthi')}><Wind size={17} /> Shruthi</button>
           <button className={`nav-item ${activePage === 'chords' ? 'active' : ''}`} onClick={() => setActivePage('chords')}><Wand2 size={17} /> Chord Analyser</button>
           <button className={`nav-item ${activePage === 'karnatik' ? 'active' : ''}`} onClick={() => setActivePage('karnatik')}><BookOpen size={17} /> Karnatik Ragas</button>
           <button className={`nav-item ${activePage === 'quiz' ? 'active' : ''}`} onClick={() => setActivePage('quiz')}><ClipboardList size={17} /> Quiz</button>
@@ -1363,7 +1443,8 @@ function App({ user, onSignOut }) {
         </div>
       </header>
 
-      <main className="workspace">
+      <main className={`workspace ${!showLibraryPane && !showCompanionPane ? 'workspace-full' : ''} ${!showCompanionPane ? 'workspace-no-companion' : ''}`}>
+        {showLibraryPane && (
         <aside className="library-pane">
           <div className="pane-title">Raga Library</div>
           <label className="search-box">
@@ -1394,8 +1475,31 @@ function App({ user, onSignOut }) {
           </div>
           <button className="add-button"><Plus size={17} /> Add to My Ragas</button>
         </aside>
+        )}
 
-        {activePage === 'karnatik' ? (
+        {activePage === 'raga-dna' ? (
+          <RagaDnaPage ragaDetector={ragaDetector} startRagaDetection={startRagaDetection} selected={selected} pitch={pitch} />
+        ) : activePage === 'shruthi' ? (
+          <ShruthiPage
+            pitch={pitch}
+            setPitch={setPitch}
+            tanpuraMode={tanpuraMode}
+            setTanpuraMode={setTanpuraMode}
+            volume={volume}
+            setVolume={setVolume}
+            tanpuraOn={tanpuraOn}
+            tanpuraLoading={tanpuraLoading}
+            toggleTanpura={toggleTanpura}
+            metronomeOn={metronomeOn}
+            beatCount={beatCount}
+            tempo={tempo}
+            setTempoClamped={setTempoClamped}
+            metronomeVolume={metronomeVolume}
+            setMetronomeVolume={setMetronomeVolume}
+            toggleMetronome={toggleMetronome}
+            stopMetronome={stopMetronome}
+          />
+        ) : activePage === 'karnatik' ? (
           <KarnatikRagasPage />
         ) : activePage === 'chords' ? (
           <ChordAnalyserPage pitch={pitch} setPitch={setPitch} selectedId={selected.id} />
@@ -1567,32 +1671,10 @@ function App({ user, onSignOut }) {
             </div>
           </section>
 
-          <section className="roadmap-section">
-            <div className="section-heading">
-              <div>
-                <h2>RAGA Companion Kanban</h2>
-                <p>Feature tracking for the MVP and the path to thekarnatik.com.</p>
-              </div>
-            </div>
-            <div className="kanban-board">
-              {roadmapColumns.map((column) => (
-                <div className={`kanban-column ${column.tone}`} key={column.title}>
-                  <h3>{column.title}</h3>
-                  <div className="kanban-items">
-                    {column.items.map((item) => (
-                      <article key={item.title}>
-                        <strong>{item.title}</strong>
-                        <span>{item.meta}</span>
-                      </article>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
           </section>
         )}
 
+        {showCompanionPane && (
         <aside className="companion-pane">
           <div className="pane-title">Raga Companion</div>
           <div className="chat">
@@ -1621,161 +1703,283 @@ function App({ user, onSignOut }) {
             />
             <button type="submit" aria-label="Send companion message"><Send size={18} /></button>
           </form>
+        </aside>
+        )}
+      </main>
+    </div>
+  );
+}
 
-          <section className="raga-detect-card">
-            <div className="builder-title">
-              <div>
-                <span><Search size={16} /> Detect Raga</span>
-                <p>{ragaDetector.root ? `Detected ${ragaDetector.root} as Sa` : 'Auto-detects Sa from your voice'}</p>
-              </div>
-              <Sparkles size={20} />
+function ShruthiPage({
+  pitch,
+  setPitch,
+  tanpuraMode,
+  setTanpuraMode,
+  volume,
+  setVolume,
+  tanpuraOn,
+  tanpuraLoading,
+  toggleTanpura,
+  metronomeOn,
+  beatCount,
+  tempo,
+  setTempoClamped,
+  metronomeVolume,
+  setMetronomeVolume,
+  toggleMetronome,
+  stopMetronome
+}) {
+  return (
+    <section className="raga-pane shruthi-page">
+      <div className="raga-header">
+        <div>
+          <h1>Shruthi Studio</h1>
+          <p>Tanpura drone and pitch-aligned metronome for focused practice.</p>
+        </div>
+      </div>
+
+      <div className="shruthi-layout">
+        <section className="shruthi-tool-card">
+          <div className="section-heading">
+            <div>
+              <h2>Tanpura</h2>
+              <p>Actual tanpura samples, pitch shifted across keys for beta practice.</p>
             </div>
-            <div className={`raga-detect-status ${ragaDetector.status}`}>
-              <div>
-                <span>{ragaDetector.status === 'listening' ? 'Listening' : ragaDetector.status === 'detected' ? 'Identified' : 'Raga Finder'}</span>
-                <strong>{ragaDetector.matches.find((match) => match.strong)?.name || (ragaDetector.status === 'detected' || ragaDetector.status === 'error' ? `Sa: ${ragaDetector.root || 'not locked'}` : 'Sing Sa, then scale')}</strong>
-                <small>{ragaDetector.stage}</small>
-                {ragaDetector.error && <small className="detector-error">{ragaDetector.error}</small>}
-              </div>
-              <button className={ragaDetector.status === 'listening' ? 'listening' : ''} onClick={startRagaDetection}>
-                {ragaDetector.status === 'listening' ? <MicOff size={16} /> : <Mic size={16} />}
-                {ragaDetector.status === 'listening' ? 'Stop & Identify' : 'Detect Raga'}
-              </button>
+            <button className="notation-button" onClick={toggleTanpura} disabled={tanpuraLoading}>
+              {tanpuraOn ? <Pause size={16} /> : <Play size={16} />}
+              {tanpuraLoading ? 'Loading' : tanpuraOn ? 'Stop' : 'Start'}
+            </button>
+          </div>
+
+          <div className="tanpura-body">
+            <div
+              className={`tanpura-visual ${metronomeOn && beatCount ? 'tempo-pulse' : ''} ${beatCount === 1 ? 'sam' : ''}`}
+              style={{ '--beat-ms': `${60000 / tempo}ms` }}
+            >
+              <span></span><span></span><span></span><span></span>
             </div>
-            <div className={`detector-process ${ragaDetector.status}`}>
-              {ragaDetector.processLog.map((line, index) => (
-                <p key={`${line}-${index}`}>
-                  <b>{index + 1}</b>
-                  <span>{line}</span>
-                </p>
+            <div className="tanpura-controls">
+              {getTanpuraStrings(tanpuraMode).map((string, index) => (
+                <ControlRow key={`${string.label}-${index}`} label={string.label} value={string.value} accent={string.accent} />
               ))}
-            </div>
-            {(ragaDetector.status === 'listening' || ragaDetector.status === 'detected') && (
-              <div className="heard-strip">
-                <span>Heard Swaras</span>
-                <p>{ragaDetector.heardSwaras.length ? ragaDetector.heardSwaras.map((item) => `${item.swara} (${item.count})`).join(' · ') : 'Listening...'}</p>
-              </div>
-            )}
-            {ragaDetector.matches.length > 0 && (
-              <div className="raga-match-list">
-                {ragaDetector.matches.slice(0, 3).map((match) => (
-                  <button key={match.id} onClick={() => match.ragaId && setSelectedId(match.ragaId)}>
-                    <strong>{match.name}</strong>
-                    <span>{match.score}% {match.strong ? 'match' : 'possible only'} · Shyam 20 baseline</span>
-                    <small>Path: {match.sequenceScore}% · Matched: {match.matched.join(' ') || 'none'} · Missing: {match.missing.join(' ') || 'none'} · Signature missing: {match.signatureMissing.join(' ') || 'none'} · Extra: {match.extra.join(' ') || 'none'}</small>
-                  </button>
-                ))}
-              </div>
-            )}
-          </section>
-
-          <section className="test-builder-card">
-            <div className="builder-title">
-              <div>
-                <span><ClipboardList size={16} /> Test Builder</span>
-                <p>{selected.name} in {pitch} Sa</p>
-              </div>
-              <Wand2 size={20} />
-            </div>
-            <div className="builder-controls">
-              <label>Difficulty
-                <select value={testDifficulty} onChange={(event) => setTestDifficulty(event.target.value)}>
-                  <option>Foundation</option>
-                  <option>Intermediate</option>
-                  <option>Composition</option>
+              <label className="select-label">Drone Preset
+                <select value={tanpuraMode} onChange={(event) => setTanpuraMode(event.target.value)}>
+                  <option value="sa-pa">Sa-Pa-Sa-Sa</option>
+                  <option value="sa-ma">Sa-Ma-Sa-Sa</option>
                 </select>
               </label>
-              <label>Questions
-                <input
-                  type="number"
-                  min="3"
-                  max="10"
-                  value={questionCount}
-                  onChange={(event) => setQuestionCount(Number(event.target.value))}
-                />
-              </label>
-            </div>
-            <div className="type-toggles">
-              {testTypes.map((type) => (
-                <button
-                  key={type}
-                  className={enabledTypes.includes(type) ? 'active' : ''}
-                  onClick={() => toggleType(type)}
-                >
-                  {enabledTypes.includes(type) && <CheckCircle2 size={14} />}
-                  {type}
-                </button>
-              ))}
-            </div>
-            <div className="test-preview">
-              {generatedTest.map((item, index) => (
-                <div key={`${item.type}-${item.prompt}`} className="test-question">
-                  <b>{index + 1}</b>
-                  <span>{item.type}</span>
-                  <p>{item.prompt}</p>
-                  <small>{item.answer}</small>
-                </div>
-              ))}
-            </div>
-            <button className="start-test-button"><Play size={16} /> Start Test</button>
-          </section>
-
-          <section className="tanpura-card">
-            <div className="tabs">
-              <button className="active">Tanpura</button>
-              <button>Shruti</button>
-            </div>
-            <div className="tanpura-body">
-              <div
-                className={`tanpura-visual ${metronomeOn && beatCount ? 'tempo-pulse' : ''} ${beatCount === 1 ? 'sam' : ''}`}
-                style={{ '--beat-ms': `${60000 / tempo}ms` }}
-              >
-                <span></span><span></span><span></span><span></span>
-              </div>
-              <div className="tanpura-controls">
-                <ControlRow label="Sa" value="S" />
-                <ControlRow label="Pa" value="P" accent />
-                <ControlRow label="Sa" value="S'" />
-                <label className="select-label">Drone Preset
-                  <select value="sa-pa" disabled>
-                    <option value="sa-pa">Sa-Pa Sample</option>
-                  </select>
-                </label>
-                <label className="select-label">Pitch
+              <label className="select-label">Pitch
                 <select value={pitch} onChange={(event) => setPitch(event.target.value)}>
                   {chromatic.map((p) => <option key={p}>{p}</option>)}
                 </select>
-                </label>
-                <label className="range-label"><Volume2 size={16} /> Volume
-                  <input type="range" min="0" max="100" value={volume} onChange={(event) => setVolume(event.target.value)} />
-                  <span>{volume}%</span>
-                </label>
-              </div>
+              </label>
+              <label className="range-label"><Volume2 size={16} /> Tanpura Volume
+                <input type="range" min="0" max="100" value={volume} onChange={(event) => setVolume(event.target.value)} />
+                <span>{volume}%</span>
+              </label>
             </div>
-            <button className="start-button" onClick={toggleTanpura}>
-              {tanpuraOn ? <Pause size={17} /> : <Play size={17} />}
-              {tanpuraOn ? 'Tanpura Playing' : 'Start Tanpura'}
-            </button>
-          </section>
-        </aside>
-      </main>
+          </div>
+        </section>
 
-      <footer className="player">
-        <div><Music2 size={28} /><span>Now Playing</span><strong>{metronomeOn ? `Metronome ${tempo} BPM` : 'Metronome'}</strong></div>
-        <div className="transport">
-          <button onClick={stopMetronome}><Pause size={18} /></button>
-          <button className="big" onClick={toggleMetronome}>{metronomeOn ? <Pause size={24} /> : <Play size={24} />}</button>
-          <button><Wind size={18} /></button>
+        <section className="shruthi-tool-card">
+          <div className="section-heading">
+            <div>
+              <h2>Metronome</h2>
+              <p>Click is tuned to the selected Sa and Pa so rhythm does not fight the shruthi.</p>
+            </div>
+            <button className="notation-button" onClick={toggleMetronome}>
+              {metronomeOn ? <Pause size={16} /> : <Play size={16} />}
+              {metronomeOn ? 'Stop' : 'Start'}
+            </button>
+          </div>
+
+          <div className="metronome-panel">
+            <div className="metronome-readout">
+              <span>Tempo</span>
+              <strong>{tempo}</strong>
+              <small>BPM</small>
+            </div>
+            <div className="beat-meter large" aria-label="Metronome beat">
+              {[1, 2, 3, 4].map((beat) => <span key={beat} className={beatCount === beat ? 'active' : ''}>{beat}</span>)}
+            </div>
+            <label className="tempo-control">Tempo
+              <button onClick={() => setTempoClamped(tempo - 1)}>-</button>
+              <input type="range" min="30" max="240" value={tempo} onInput={(event) => setTempoClamped(Number(event.target.value))} onChange={(event) => setTempoClamped(Number(event.target.value))} />
+              <strong>{tempo}</strong>
+              <button onClick={() => setTempoClamped(tempo + 1)}>+</button>
+            </label>
+            <label className="metro-volume"><Volume2 size={16} /> Click Volume
+              <input type="range" min="0" max="100" value={metronomeVolume} onInput={(event) => setMetronomeVolume(Number(event.target.value))} onChange={(event) => setMetronomeVolume(Number(event.target.value))} />
+              <strong>{metronomeVolume}%</strong>
+            </label>
+            <button className="secondary-control" onClick={stopMetronome}><Pause size={16} /> Reset Metronome</button>
+          </div>
+        </section>
+      </div>
+    </section>
+  );
+}
+
+function RagaDnaPage({ ragaDetector, startRagaDetection, selected, pitch }) {
+  const topMatch = ragaDetector.matches?.[0];
+  return (
+    <section className="raga-pane raga-dna-page">
+      <div className="raga-header">
+        <div>
+          <h1>RagaDNA Detection</h1>
+          <p>Detailed pitch, swara, frequency, and library-match analysis for live singing tests.</p>
         </div>
-        <div className="beat-meter" aria-label="Metronome beat">
-          {[1, 2, 3, 4].map((beat) => <span key={beat} className={beatCount === beat ? 'active' : ''}>{beat}</span>)}
+        <button className="notation-button" onClick={startRagaDetection}>
+          {ragaDetector.status === 'listening' ? <MicOff size={16} /> : <Mic size={16} />}
+          {ragaDetector.status === 'listening' ? 'Stop & Identify' : 'Start Detection'}
+        </button>
+      </div>
+
+      <div className="ragadna-debug-layout">
+        <RagaDetectionPanel ragaDetector={ragaDetector} startRagaDetection={startRagaDetection} />
+
+        <section className="ragadna-detail-panel">
+          <div className="section-heading">
+            <div>
+              <h2>Frequency Evidence</h2>
+              <p>{ragaDetector.root ? `Sa locked as ${ragaDetector.root}. Current practice context: ${selected.name} in ${pitch} Sa.` : 'Start with a steady Sa, then sing Arohana and Avarohana.'}</p>
+            </div>
+          </div>
+
+          <div className="ragadna-strength-grid">
+            <article>
+              <span>Accepted for Decision</span>
+              <strong>{ragaDetector.heardSwaras?.length || 0}</strong>
+              <p>{formatSwaraCounts(ragaDetector.heardSwaras) || 'Waiting for stable held notes.'}</p>
+            </article>
+            <article>
+              <span>Rejected as Weak Trace</span>
+              <strong>{ragaDetector.rejectedSwaras?.length || 0}</strong>
+              <p>{formatSwaraCounts(ragaDetector.rejectedSwaras) || 'No weak traces rejected yet.'}</p>
+            </article>
+            <article>
+              <span>Top Candidate</span>
+              <strong>{topMatch?.name || 'Pending'}</strong>
+              <p>{topMatch ? `${topMatch.score}% score, ${topMatch.fingerprintScore || 0}% sample fingerprint.` : 'No completed run yet.'}</p>
+            </article>
+          </div>
+
+          {ragaDetector.evidenceFrames?.length > 0 ? (
+            <div className="frequency-table">
+              <div className="frequency-table-head">
+                <span>#</span>
+                <span>Swara</span>
+                <span>Note</span>
+                <span>Hz</span>
+                <span>Samples</span>
+              </div>
+              {ragaDetector.evidenceFrames.map((frame) => (
+                <div key={`${frame.index}-${frame.interval}-${frame.samples}`} className="frequency-row">
+                  <span>{frame.index}</span>
+                  <strong>{frame.syllable ? `${frame.syllable} / ${frame.swara}` : frame.swara}</strong>
+                  <span>{frame.note}</span>
+                  <span>{frame.frequency}</span>
+                  <span>{frame.samples}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-analysis-box">No recorded frequency segments yet.</div>
+          )}
+
+          {ragaDetector.analysisSummary && (
+            <div className="recording-analysis-strip wide">
+              <span>Run Decision</span>
+              <p>{ragaDetector.analysisSummary}</p>
+            </div>
+          )}
+
+          {ragaDetector.matches?.length > 0 && (
+            <div className="ragadna-match-table">
+              {ragaDetector.matches.slice(0, 6).map((match) => (
+                <article key={match.id}>
+                  <strong>{match.name}</strong>
+                  <span>{match.score}% · Path {match.sequenceScore}% · Fingerprint {match.fingerprintScore || 0}%</span>
+                  <p>Matched {match.matched.join(' ') || 'none'} · Missing {match.missing.join(' ') || 'none'} · Extra {match.extra.join(' ') || 'none'}</p>
+                  {match.confusionNotes?.length ? <em>{match.confusionNotes.join(' ')}</em> : null}
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+    </section>
+  );
+}
+
+function RagaDetectionPanel({ ragaDetector, startRagaDetection, compact = false }) {
+  const hasStrongMatch = ragaDetector.matches?.some((candidate) => candidate.strong);
+  const topStrong = ragaDetector.matches?.find((match) => match.strong);
+  return (
+    <div className={`raga-detection-panel ${compact ? 'compact' : ''}`}>
+      <div className="builder-title">
+        <div>
+          <span><Search size={16} /> Detect Raga</span>
+          <p>{ragaDetector.root ? `Detected ${ragaDetector.root} as Sa` : 'Auto-detects Sa from your voice'}</p>
         </div>
-        <label className="tempo-control">Tempo <button onClick={() => setTempoClamped(tempo - 1)}>-</button><input type="range" min="30" max="240" value={tempo} onInput={(event) => setTempoClamped(Number(event.target.value))} onChange={(event) => setTempoClamped(Number(event.target.value))} /><strong>{tempo}</strong><button onClick={() => setTempoClamped(tempo + 1)}>+</button></label>
-        <label className="metro-volume"><Volume2 size={16} /> Click <input type="range" min="0" max="100" value={metronomeVolume} onInput={(event) => setMetronomeVolume(Number(event.target.value))} onChange={(event) => setMetronomeVolume(Number(event.target.value))} /><strong>{metronomeVolume}%</strong></label>
-        <button className="icon-button"><Settings size={19} /></button>
-      </footer>
+        <Sparkles size={20} />
+      </div>
+      <div className={`raga-detect-status ${ragaDetector.status}`}>
+        <div>
+          <span>{ragaDetector.status === 'listening' ? 'Listening' : ragaDetector.status === 'detected' ? 'Identified' : 'Raga Finder'}</span>
+          <strong>{topStrong?.name || (ragaDetector.status === 'detected' || ragaDetector.status === 'error' ? `Sa: ${ragaDetector.root || 'not locked'}` : 'Sing Sa, then scale')}</strong>
+          <small>{ragaDetector.stage}</small>
+          {ragaDetector.error && <small className="detector-error">{ragaDetector.error}</small>}
+        </div>
+        <button className={ragaDetector.status === 'listening' ? 'listening' : ''} onClick={startRagaDetection}>
+          {ragaDetector.status === 'listening' ? <MicOff size={16} /> : <Mic size={16} />}
+          {ragaDetector.status === 'listening' ? 'Stop & Identify' : 'Detect Raga'}
+        </button>
+      </div>
+      <div className={`detector-process ${ragaDetector.status}`}>
+        {ragaDetector.processLog.map((line, index) => (
+          <p key={`${line}-${index}`}>
+            <b>{index + 1}</b>
+            <span>{line}</span>
+          </p>
+        ))}
+      </div>
+      {(ragaDetector.status === 'listening' || ragaDetector.status === 'detected') && (
+        <div className="heard-strip">
+          <span>Accepted Swaras</span>
+          <p>{formatSwaraCounts(ragaDetector.heardSwaras) || 'Listening...'}</p>
+        </div>
+      )}
+      {ragaDetector.rejectedSwaras?.length > 0 && (
+        <div className="heard-strip rejected">
+          <span>Rejected Weak Traces</span>
+          <p>{formatSwaraCounts(ragaDetector.rejectedSwaras)}</p>
+        </div>
+      )}
+      {compact && ragaDetector.evidenceFrames?.length > 0 && (
+        <div className="recording-analysis-strip">
+          <span>Frequency Evidence</span>
+          <p>{ragaDetector.evidenceFrames.map((frame) => `${frame.swara} ${frame.frequency}Hz`).join(' -> ')}</p>
+        </div>
+      )}
+      {ragaDetector.matches?.length > 0 && (
+        <div className="raga-match-list">
+          {ragaDetector.matches.slice(0, compact ? 3 : 4).map((match) => (
+            <button key={match.id} className={!hasStrongMatch ? 'debug-candidate' : ''}>
+              <strong>{match.name}</strong>
+              <span>{hasStrongMatch ? `${match.score}% ${match.strong ? 'match' : 'possible only'}` : `${match.score}% debug candidate - not identified`} · {match.sampleCount || 1} samples</span>
+              <small>Path: {match.sequenceScore}% · Fingerprint: {match.fingerprintScore || 0}% from {match.fingerprintSamples || 0} clips · Matched: {match.matched.join(' ') || 'none'} · Missing: {match.missing.join(' ') || 'none'} · Extra: {match.extra.join(' ') || 'none'}</small>
+              {match.confusionNotes?.length ? <small>{match.confusionNotes.join(' ')}</small> : null}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
+}
+
+function formatSwaraCounts(items = []) {
+  return items.length ? items.map((item) => `${item.swara} (${item.count}${item.strength ? `, ${item.strength}%` : ''})`).join(' · ') : '';
 }
 
 function ChordAnalyserPage({ pitch, setPitch, selectedId }) {
@@ -2805,11 +3009,12 @@ function playRagaScaleReview(raga, root) {
   window.setTimeout(() => playSwaraLine(raga.avarohana, root), (raga.arohana.length * 0.42 + 0.5) * 1000);
 }
 
-function nearestTamburaSample(note) {
+function nearestTamburaSample(note, mode = 'sa-pa') {
+  const samples = mode === 'sa-ma' ? tamburaMaSamples : tamburaSamples;
   const targetIndex = chromatic.indexOf(note);
-  let best = tamburaSamples[0];
+  let best = samples[0];
   let bestDistance = Infinity;
-  for (const sample of tamburaSamples) {
+  for (const sample of samples) {
     const sampleIndex = chromatic.indexOf(sample);
     const rawDistance = targetIndex - sampleIndex;
     const wrappedDistance = ((rawDistance + 18) % 12) - 6;
@@ -2821,7 +3026,37 @@ function nearestTamburaSample(note) {
   }
 
   const semitoneShift = ((targetIndex - chromatic.indexOf(best) + 18) % 12) - 6;
-  return { note: best, rate: 2 ** (semitoneShift / 12) };
+  return { note: best, rate: 2 ** (semitoneShift / 12), ma: mode === 'sa-ma' };
+}
+
+function tamburaAssetPath(note, mode = 'sa-pa') {
+  const sample = nearestTamburaSample(note, mode);
+  const assetName = `${tamburaAssetNames[sample.note] || sample.note}${sample.ma ? '-ma' : ''}`;
+  return `/tambura/${assetName}.wav`;
+}
+
+async function loadTamburaBuffer(context, note, mode = 'sa-pa') {
+  const assetPath = tamburaAssetPath(note, mode);
+  if (!tamburaBufferCache.has(assetPath)) {
+    tamburaBufferCache.set(assetPath, fetch(assetPath)
+      .then((response) => {
+        if (!response.ok) throw new Error(`Unable to load ${assetPath}`);
+        return response.arrayBuffer();
+      })
+      .then((arrayBuffer) => context.decodeAudioData(arrayBuffer.slice(0))));
+  }
+  return tamburaBufferCache.get(assetPath);
+}
+
+async function preloadTamburaBuffer(note, mode = 'sa-pa') {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return;
+  const context = new AudioContextClass();
+  try {
+    await loadTamburaBuffer(context, note, mode);
+  } finally {
+    window.setTimeout(() => context.close(), 120);
+  }
 }
 
 function scheduleTamburaSegments(drone, audioBuffer, playbackRate, sampleNote) {
@@ -2864,6 +3099,116 @@ function scheduleTamburaSegments(drone, audioBuffer, playbackRate, sampleNote) {
   scheduleAhead();
   const timer = window.setInterval(scheduleAhead, 500);
   drone.timers.push(timer);
+}
+
+function getTanpuraStrings(mode) {
+  if (mode === 'sa-ma') {
+    return [
+      { label: 'Sa', value: 'S', swara: 'S', octave: 3 },
+      { label: 'Ma', value: 'M', swara: 'M1', octave: 3, accent: true },
+      { label: 'Sa', value: "S'", swara: 'S', octave: 4 },
+      { label: 'Sa', value: "S'", swara: 'S', octave: 4 }
+    ];
+  }
+  if (mode === 'sa-ma-pa') {
+    return [
+      { label: 'Sa', value: 'S', swara: 'S', octave: 3 },
+      { label: 'Ma', value: 'M', swara: 'M1', octave: 3, accent: true },
+      { label: 'Pa', value: 'P', swara: 'P', octave: 3, accent: true },
+      { label: 'Sa', value: "S'", swara: 'S', octave: 4 }
+    ];
+  }
+  return [
+    { label: 'Sa', value: 'S', swara: 'S', octave: 3 },
+    { label: 'Pa', value: 'P', swara: 'P', octave: 3, accent: true },
+    { label: 'Sa', value: "S'", swara: 'S', octave: 4 },
+    { label: 'Sa', value: "S'", swara: 'S', octave: 4 }
+  ];
+}
+
+function scheduleSynthTanpura(drone, root, mode) {
+  const strings = getTanpuraStrings(mode);
+  const cycle = 6.4;
+  const offsets = [0, 1.55, 3.12, 4.78];
+  const lookAhead = 10;
+  let nextCycle = drone.context.currentTime + 0.08;
+
+  const scheduleAhead = () => {
+    if (drone.stopped) return;
+    while (nextCycle < drone.context.currentTime + lookAhead) {
+      strings.forEach((string, index) => {
+        const frequency = swaraFrequency(string.swara, root, string.octave);
+        pluckTanpuraString(drone, frequency, nextCycle + offsets[index], index, string.accent);
+      });
+      nextCycle += cycle;
+    }
+  };
+
+  scheduleAhead();
+  const timer = window.setInterval(scheduleAhead, 700);
+  drone.timers.push(timer);
+}
+
+function pluckTanpuraString(drone, frequency, when, index, accent = false) {
+  if (!frequency || drone.stopped) return;
+  const { context } = drone;
+  const duration = accent ? 6.9 : 6.4;
+  const panValue = [-0.18, 0.14, -0.08, 0.2][index] || 0;
+  const panner = context.createStereoPanner ? context.createStereoPanner() : null;
+  const stringGain = context.createGain();
+  const buzz = context.createBiquadFilter();
+  buzz.type = 'peaking';
+  buzz.frequency.value = frequency * 2.03;
+  buzz.Q.value = 12;
+  buzz.gain.value = accent ? 7 : 5.5;
+
+  stringGain.gain.setValueAtTime(0.0001, when);
+  stringGain.gain.exponentialRampToValueAtTime(accent ? 0.44 : 0.36, when + 0.035);
+  stringGain.gain.exponentialRampToValueAtTime(0.06, when + 1.9);
+  stringGain.gain.exponentialRampToValueAtTime(0.0001, when + duration);
+
+  const output = panner || buzz;
+  if (panner) {
+    panner.pan.setValueAtTime(panValue, when);
+    panner.connect(drone.input);
+    buzz.connect(panner);
+  } else {
+    buzz.connect(drone.input);
+  }
+
+  const partials = [
+    { multiple: 1, gain: 0.9, detune: 0 },
+    { multiple: 2, gain: 0.34, detune: -6 },
+    { multiple: 3, gain: 0.18, detune: 5 },
+    { multiple: 4, gain: 0.1, detune: -9 },
+    { multiple: 5, gain: 0.08, detune: 7 }
+  ];
+
+  partials.forEach((partial) => {
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = partial.multiple === 1 ? 'triangle' : 'sine';
+    oscillator.frequency.setValueAtTime(frequency * partial.multiple, when);
+    oscillator.detune.setValueAtTime(partial.detune, when);
+    gain.gain.setValueAtTime(partial.gain, when);
+    oscillator.connect(gain);
+    gain.connect(stringGain);
+    oscillator.start(when);
+    oscillator.stop(when + duration + 0.08);
+    drone.sources.push(oscillator);
+  });
+
+  stringGain.connect(buzz);
+  const cleanupTimer = window.setTimeout(() => {
+    try {
+      stringGain.disconnect();
+      buzz.disconnect();
+      output.disconnect?.();
+    } catch {
+      // Nodes may already be disconnected when the tanpura is stopped.
+    }
+  }, Math.max(0, (when - context.currentTime + duration + 0.4) * 1000));
+  drone.timers.push(cleanupTimer);
 }
 
 function volumeToGain(volume) {
@@ -2920,6 +3265,276 @@ function summarizeStableHeardIntervals(heard) {
   return intervals.filter((item) => item.count >= minimumCount);
 }
 
+function startSwaraSyllableRecognition(onChange) {
+  const SpeechRecognitionClass = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognitionClass) return null;
+  const recognition = new SpeechRecognitionClass();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = 'en-IN';
+  let finalTranscript = '';
+  let lastTranscript = '';
+  recognition.onresult = (event) => {
+    let interimTranscript = '';
+    for (let index = event.resultIndex; index < event.results.length; index += 1) {
+      const text = event.results[index][0]?.transcript || '';
+      if (event.results[index].isFinal) {
+        finalTranscript += ` ${text}`;
+      } else {
+        interimTranscript += ` ${text}`;
+      }
+    }
+    lastTranscript = `${finalTranscript} ${interimTranscript}`.trim();
+    onChange({ syllables: parseSwaraSyllables(lastTranscript), transcript: lastTranscript, status: 'active' });
+  };
+  recognition.onstart = () => onChange({ syllables: [], transcript: '', status: 'active' });
+  recognition.onerror = (event) => onChange({ syllables: parseSwaraSyllables(lastTranscript), transcript: lastTranscript, status: event.error || 'error' });
+  recognition.onend = () => onChange({ syllables: parseSwaraSyllables(lastTranscript), transcript: lastTranscript, status: lastTranscript ? 'ended' : 'ended-empty' });
+  try {
+    recognition.start();
+  } catch {
+    return null;
+  }
+  return recognition;
+}
+
+function parseSwaraSyllables(transcript = '') {
+  const text = ` ${transcript.toLowerCase().replace(/[^a-z\s]/g, ' ').replace(/\s+/g, ' ')} `;
+  const phraseMatches = [];
+  const pattern = /\b(saa?|sha|sar|ri|ree|re|ray|rhea|ga|gaa|gah|ma|maa|mah|pa|paa|pah|da|daa|dha|dhaa|ni|nee|knee|nigh)\b/g;
+  let match = pattern.exec(text);
+  while (match) {
+    const label = swaraSyllableFromToken(match[1]);
+    if (label) phraseMatches.push({ label, index: match.index });
+    match = pattern.exec(text);
+  }
+  if (phraseMatches.length) {
+    return dedupeNearbySyllables(phraseMatches);
+  }
+
+  const cleaned = transcript
+    .toLowerCase()
+    .replace(/[^a-z\s]/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean);
+
+  return cleaned
+    .map((token) => swaraSyllableFromToken(token))
+    .filter(Boolean)
+    .map((label, index) => ({ label, index }));
+}
+
+function dedupeNearbySyllables(items) {
+  return items.filter((item, index) => {
+    const previous = items[index - 1];
+    return !previous || previous.label !== item.label || item.index - previous.index > 4;
+  });
+}
+
+function swaraSyllableFromToken(token) {
+  const normalized = token.toLowerCase();
+  if (['sa', 'saa', 'sha', 'sar'].includes(normalized)) return 'S';
+  if (['ri', 'ree', 're', 'ray', 'rhea'].includes(normalized)) return 'R';
+  if (['ga', 'gaa', 'gah', 'gama'].includes(normalized)) return 'G';
+  if (['ma', 'maa', 'mah'].includes(normalized)) return 'M';
+  if (['pa', 'paa', 'pah'].includes(normalized)) return 'P';
+  if (['da', 'daa', 'dha', 'dhaa', 'the'].includes(normalized)) return 'D';
+  if (['ni', 'nee', 'nigh', 'knee'].includes(normalized)) return 'N';
+  return null;
+}
+
+function describeSyllableLayer(session, final = false) {
+  if (session.syllables.length) {
+    return `Clock 0 syllables heard: ${session.syllables.map((item) => item.label).join(' ')}.`;
+  }
+  if (session.syllableTranscript) {
+    return `Clock 0 heard text but no swaras: "${session.syllableTranscript.slice(0, 64)}".`;
+  }
+  if (session.syllableStatus === 'not-supported') {
+    return 'Clock 0 syllables: not supported in this browser; using pitch/path only.';
+  }
+  if (session.syllableStatus && !['active', 'starting'].includes(session.syllableStatus)) {
+    return `Clock 0 syllables: ${session.syllableStatus}; using pitch/path only.`;
+  }
+  return final ? 'Clock 0 syllables: not detected; using pitch/path only.' : 'Clock 0 syllable layer active; sing Sa Ri Ga Ma Pa Da Ni clearly.';
+}
+
+function buildSyllableEvidence(syllables = []) {
+  const labels = syllables.map((item) => item.label);
+  const counts = labels.reduce((acc, label) => {
+    acc[label] = (acc[label] || 0) + 1;
+    return acc;
+  }, {});
+  const allowedByLabel = {
+    S: [0],
+    R: [1, 2, 3],
+    G: [2, 3, 4],
+    M: [5, 6],
+    P: [7],
+    D: [8, 9, 10],
+    N: [9, 10, 11]
+  };
+  const defaultByLabel = { S: 0, R: 2, G: 4, M: 5, P: 7, D: 9, N: 11 };
+  const intervals = Array.from(new Set(labels.flatMap((label) => allowedByLabel[label] || [])));
+  const defaultIntervals = Array.from(new Set(labels.map((label) => defaultByLabel[label]).filter((interval) => interval !== undefined)));
+  return { labels, counts, intervals, defaultIntervals };
+}
+
+function mergeSyllableIntervals(intervals, syllableEvidence) {
+  if (!syllableEvidence.defaultIntervals.length) return intervals;
+  const byInterval = new Map(intervals.map((item) => [item.interval, item]));
+  syllableEvidence.defaultIntervals.forEach((interval) => {
+    if (!byInterval.has(interval)) {
+      byInterval.set(interval, {
+        interval,
+        swara: intervalLabels[interval],
+        count: Math.max(2, Math.round((syllableEvidence.counts[intervalPrimarySyllable(interval)] || 1) * 8)),
+        syllableOnly: true
+      });
+    }
+  });
+  return Array.from(byInterval.values()).sort((a, b) => a.interval - b.interval);
+}
+
+function intervalPrimarySyllable(interval) {
+  if (interval === 0) return 'S';
+  if ([1, 2, 3].includes(interval)) return 'R';
+  if ([2, 3, 4].includes(interval)) return 'G';
+  if ([5, 6].includes(interval)) return 'M';
+  if (interval === 7) return 'P';
+  if ([8, 9, 10].includes(interval)) return 'D';
+  if ([9, 10, 11].includes(interval)) return 'N';
+  return '';
+}
+
+function buildSyllableIntervalSequence(syllables = [], allowedIntervals = null) {
+  const defaults = { S: 0, R: 2, G: 4, M: 5, P: 7, D: 9, N: 11 };
+  return syllables
+    .map((item) => defaults[item.label])
+    .filter((interval) => interval !== undefined)
+    .filter((interval) => !allowedIntervals || allowedIntervals.has(interval) || [9, 10, 11].includes(interval))
+    .filter((interval, index, list) => index === 0 || interval !== list[index - 1]);
+}
+
+function mergeEvidenceSequence(pitchSequence, syllableSequence) {
+  if (syllableSequence.length >= Math.max(4, pitchSequence.length - 2)) return syllableSequence;
+  return pitchSequence;
+}
+
+function buildHeldSwaraSegments(heard) {
+  const runs = [];
+  heard.forEach((item) => {
+    const last = runs[runs.length - 1];
+    if (last && last.interval === item.interval) {
+      last.count += 1;
+      last.items.push(item);
+      return;
+    }
+    runs.push({ interval: item.interval, count: 1, items: [item] });
+  });
+
+  if (!runs.length) return [];
+  const maxRun = Math.max(...runs.map((run) => run.count));
+  const holdThreshold = Math.max(3, Math.ceil(maxRun * 0.12));
+  const strongHoldThreshold = Math.max(5, Math.ceil(maxRun * 0.18));
+
+  const keptRuns = runs.filter((run, index) => {
+    if (run.interval === 0 && index === runs.length - 1 && run.count >= Math.max(2, Math.ceil(holdThreshold * 0.55))) return true;
+    if (run.count >= holdThreshold) return true;
+    const previous = runs[index - 1];
+    const next = runs[index + 1];
+    if (!previous || !next) return run.count >= strongHoldThreshold;
+    const surroundedByHolds = previous.count >= holdThreshold && next.count >= holdThreshold;
+    if (!surroundedByHolds) return run.count >= strongHoldThreshold;
+
+    const movingToSa = next.interval === 0 && isBetweenCircular(run.interval, previous.interval, next.interval);
+    const passingBetweenNotes = isBetweenCircular(run.interval, previous.interval, next.interval);
+    return !(movingToSa || passingBetweenNotes);
+  });
+
+  return keptRuns.flatMap((run) => run.items);
+}
+
+function buildEvidenceFrames(heardSegments, root, syllables = []) {
+  const runs = [];
+  heardSegments.forEach((item) => {
+    const last = runs[runs.length - 1];
+    if (last && last.interval === item.interval) {
+      last.items.push(item);
+      return;
+    }
+    runs.push({ interval: item.interval, items: [item] });
+  });
+
+  return runs.map((run, index) => {
+    const frequencies = run.items.map((item) => item.frequency).filter(Boolean);
+    const frequency = median(frequencies);
+    const note = frequency ? frequencyToNote(frequency).note : noteFromInterval(root, run.interval);
+    const syllable = syllables[index]?.label || '';
+    return {
+      index: index + 1,
+      syllable,
+      frequency: frequency ? Number(frequency.toFixed(1)) : 0,
+      note,
+      swara: intervalLabels[run.interval],
+      interval: run.interval,
+      samples: run.items.length
+    };
+  });
+}
+
+function describeRagaDecision(root, evidenceFrames = [], evidenceSequence = [], matches = []) {
+  const top = matches[0];
+  const next = matches[1];
+  const path = evidenceSequence.map((interval) => intervalLabels[interval]).join(' ');
+  const frequencyLine = evidenceFrames.length
+    ? evidenceFrames.map((frame) => `${frame.swara} ${frame.frequency}Hz`).join(' -> ')
+    : 'not enough stable segments';
+  if (!top) {
+    return `Sa ${root || 'not locked'}; frequency evidence: ${frequencyLine}. No raga candidate had enough evidence.`;
+  }
+  const gap = next ? top.score - next.score : top.score;
+  const confidenceNote = top.strong
+    ? `identified because the top match is strong`
+    : `debug only because the top match is not strong enough`;
+  return `Sa ${root}. Path ${path || 'not enough ordered notes'}. Frequency evidence: ${frequencyLine}. Top ${top.name} ${top.score}%, next ${next?.name || 'none'} ${next?.score ?? 0}% (gap ${gap}). ${confidenceNote}.`;
+}
+
+function isBetweenCircular(candidate, from, to) {
+  const ascendingDistance = (to - from + 12) % 12;
+  const candidateAscending = (candidate - from + 12) % 12;
+  if (ascendingDistance > 0 && candidateAscending > 0 && candidateAscending < ascendingDistance) return true;
+
+  const descendingDistance = (from - to + 12) % 12;
+  const candidateDescending = (from - candidate + 12) % 12;
+  return descendingDistance > 0 && candidateDescending > 0 && candidateDescending < descendingDistance;
+}
+
+function selectDecisionSwaras(intervals) {
+  if (!intervals.length) return { kept: [], rejected: [] };
+  const maxCount = Math.max(...intervals.map((item) => item.count || 0));
+  const totalCount = intervals.reduce((sum, item) => sum + (item.count || 0), 0);
+  const minimumCount = Math.max(4, Math.ceil(maxCount * 0.16), Math.ceil(totalCount * 0.025));
+  const strongCount = Math.max(minimumCount, Math.ceil(maxCount * 0.26));
+
+  const decorated = intervals.map((item) => {
+    const strength = maxCount ? Math.round(((item.count || 0) / maxCount) * 100) : 0;
+    return {
+      ...item,
+      strength,
+      decision: item.count >= minimumCount || item.syllableOnly ? 'accepted' : 'rejected',
+      decisionReason: item.count >= minimumCount || item.syllableOnly
+        ? (item.count >= strongCount ? 'held evidence' : 'usable evidence')
+        : `weak trace below ${minimumCount} samples`
+    };
+  });
+
+  return {
+    kept: decorated.filter((item) => item.decision === 'accepted'),
+    rejected: decorated.filter((item) => item.decision === 'rejected')
+  };
+}
+
 function cleanDetectedSwaras(intervals) {
   const byInterval = new Map(intervals.map((item) => [item.interval, item]));
   const removeWeakerNeighbor = (leftInterval, rightInterval, dominanceRatio = 1.12) => {
@@ -2930,6 +3545,9 @@ function cleanDetectedSwaras(intervals) {
     if (left.count >= right.count * dominanceRatio) byInterval.delete(rightInterval);
   };
 
+  removeWeakerNeighbor(1, 2, 1.25); // R1 vs R2/G1
+  removeWeakerNeighbor(2, 3, 1.22); // R2/G1 vs R3/G2
+  removeWeakerNeighbor(3, 4, 1.22); // R3/G2 vs G3
   removeWeakerNeighbor(5, 6, 1.08); // M1 vs M2
   removeWeakerNeighbor(8, 9, 1.18); // D1 vs D2/N1
   removeWeakerNeighbor(9, 10, 1.18); // D2/N1 vs D3/N2
@@ -2972,6 +3590,54 @@ function findMentionedRaga(question, fallbackRaga) {
 
   const match = candidates.find((candidate) => normalizedQuestion.includes(` ${candidate.name} `));
   return match?.raga || fallbackRaga;
+}
+
+function buildRagaDnaCandidates(entries = [], fallbackCandidates = []) {
+  const fallbackByName = new Map(fallbackCandidates.map((item) => [normalizeRagaSearchText(item.name), item]));
+  const grouped = new Map();
+
+  entries.forEach((entry) => {
+    const key = normalizeRagaSearchText(entry.raga);
+    if (!key) return;
+    const current = grouped.get(key) || {
+      id: entry.ragaId || key.replace(/\s+/g, '_'),
+      ragaId: entry.ragaId || null,
+      name: entry.raga,
+      system: entry.system || 'Karnatik',
+      family: 'RagaDNA library',
+      arohana: [],
+      avarohana: [],
+      sourceSets: new Set(),
+      sampleCount: 0
+    };
+    current.sampleCount += 1;
+    current.sourceSets.add(entry.sourceSet);
+    if (!current.ragaId && entry.ragaId) current.ragaId = entry.ragaId;
+    if (!current.arohana.length && entry.labels?.arohana?.length) current.arohana = entry.labels.arohana;
+    if (!current.avarohana.length && entry.labels?.avarohana?.length) current.avarohana = entry.labels.avarohana;
+    grouped.set(key, current);
+  });
+
+  return Array.from(grouped.values()).map((candidate) => {
+    const fallback = fallbackByName.get(normalizeRagaSearchText(candidate.name)) || fallbackCandidates.find((item) => item.ragaId && item.ragaId === candidate.ragaId);
+    const linkedRaga = candidate.ragaId ? ragas.find((raga) => raga.id === candidate.ragaId) : null;
+    const arohana = candidate.arohana.length ? candidate.arohana : fallback?.arohana || linkedRaga?.arohana || [];
+    const avarohana = candidate.avarohana.length ? candidate.avarohana : fallback?.avarohana || linkedRaga?.avarohana || [];
+    const signature = fallback?.signatureIntervals?.length
+      ? fallback.signatureIntervals
+      : ragaSignatureIntervals({ id: candidate.ragaId || candidate.id, name: candidate.name });
+    return {
+      ...candidate,
+      id: candidate.ragaId || candidate.id,
+      ragaId: candidate.ragaId || fallback?.ragaId || fallback?.id || candidate.id,
+      system: linkedRaga?.system || candidate.system,
+      family: linkedRaga?.family || candidate.family,
+      arohana,
+      avarohana,
+      signatureIntervals: signature,
+      sourceSets: Array.from(candidate.sourceSets).sort()
+    };
+  }).filter((candidate) => candidate.arohana.length && candidate.avarohana.length);
 }
 
 function ragaIntervals(raga) {
@@ -3098,10 +3764,82 @@ function bestIdentityPhraseCoverage(heardSequence, phrases) {
   )));
 }
 
-function matchRagas(heardIntervals, candidates = ragas, heardSequence = []) {
-  const heardSet = new Set(heardIntervals);
-  return candidates
+function scoreRagaFingerprints(heardCounts, heardSequence = [], featureModel = []) {
+  if (!featureModel.length || !heardCounts.size) return new Map();
+  const heardSet = new Set(heardCounts.keys());
+  const heardHistogram = buildNormalizedHistogram(heardCounts);
+  const byRaga = new Map();
+
+  featureModel.forEach((feature) => {
+    const featureSet = new Set(feature.swaraIntervals || []);
+    if (!featureSet.size) return;
+    const intersection = [...heardSet].filter((interval) => featureSet.has(interval));
+    const union = new Set([...heardSet, ...featureSet]);
+    const setScore = union.size ? intersection.length / union.size : 0;
+    const pathScore = heardSequence.length >= 5 && feature.path?.length
+      ? longestCommonSubsequenceLength(heardSequence, feature.path) / Math.max(feature.path.length, 1)
+      : 0;
+    const histogramScore = cosineSimilarity(heardHistogram, feature.histogram || []);
+    const extraPenalty = Math.max(0, heardSet.size - featureSet.size) * 0.035;
+    const raw = Math.max(0, Math.round((
+      setScore * 0.3 +
+      pathScore * 0.5 +
+      histogramScore * 0.2 -
+      extraPenalty
+    ) * 100));
+    const key = feature.ragaId || feature.canonicalRaga || normalizeRagaSearchText(feature.raga);
+    const current = byRaga.get(key) || {
+      score: 0,
+      pathScore: 0,
+      sampleCount: 0,
+      bestSampleId: ''
+    };
+    current.sampleCount += 1;
+    if (raw > current.score) {
+      current.score = raw;
+      current.pathScore = Math.round(pathScore * 100);
+      current.bestSampleId = feature.id;
+    }
+    byRaga.set(key, current);
+  });
+
+  return byRaga;
+}
+
+function buildNormalizedHistogram(counts) {
+  const histogram = Array(12).fill(0);
+  let total = 0;
+  counts.forEach((count, interval) => {
+    histogram[interval] = count;
+    total += count;
+  });
+  return histogram.map((count) => count / (total || 1));
+}
+
+function cosineSimilarity(a = [], b = []) {
+  let dot = 0;
+  let aNorm = 0;
+  let bNorm = 0;
+  for (let index = 0; index < 12; index += 1) {
+    dot += (a[index] || 0) * (b[index] || 0);
+    aNorm += (a[index] || 0) ** 2;
+    bNorm += (b[index] || 0) ** 2;
+  }
+  return aNorm && bNorm ? dot / (Math.sqrt(aNorm) * Math.sqrt(bNorm)) : 0;
+}
+
+function matchRagas(heardInput, candidates = ragas, heardSequence = [], syllableEvidence = null, featureModel = []) {
+  const heardCounts = new Map();
+  heardInput.forEach((item) => {
+    const interval = typeof item === 'number' ? item : item.interval;
+    if (interval === undefined || interval === null) return;
+    heardCounts.set(interval, (heardCounts.get(interval) || 0) + (typeof item === 'number' ? 1 : item.count || 1));
+  });
+  const heardSet = new Set(heardCounts.keys());
+  const fingerprintMatches = scoreRagaFingerprints(heardCounts, heardSequence, featureModel);
+  return applyRagaConfusionRules(candidates
     .map((raga) => {
+      const fingerprint = fingerprintMatches.get(raga.ragaId || raga.id) || fingerprintMatches.get(raga.id);
       const target = ragaIntervals(raga);
       const targetSet = new Set(target);
       const targetSequence = ragaIntervalSequence(raga);
@@ -3127,7 +3865,12 @@ function matchRagas(heardIntervals, candidates = ragas, heardSequence = []) {
       const phraseBonus = phraseCoverage >= 0.75 ? phraseCoverage * 0.24 : phraseCoverage * 0.08;
       const phrasePenalty = identityPhrases.length && phraseCoverage < 0.45 ? 0.12 : 0;
       const blendedCoverage = coverage * unorderedWeight + sequenceCoverage * orderedWeight;
-      const score = Math.max(0, Math.round((blendedCoverage + phraseBonus - missingPenalty * 0.2 - extraPenalty * 1.05 - sparsePenalty - signaturePenalty - chromaticPenalty - sequencePenalty - phrasePenalty) * 100));
+      const grammarScore = Math.round((blendedCoverage + phraseBonus - missingPenalty * 0.2 - extraPenalty * 1.05 - sparsePenalty - signaturePenalty - chromaticPenalty - sequencePenalty - phrasePenalty) * 100);
+      const fingerprintBoost = fingerprint && heardSequence.length >= 5
+        ? Math.round((fingerprint.score - grammarScore) * Math.min(0.34, Math.max(0.12, fingerprint.pathScore / 300)))
+        : 0;
+      const rawScore = grammarScore + fingerprintBoost;
+      const score = Math.min(100, Math.max(0, rawScore));
       const phraseStrong = phraseCoverage >= 0.82 && score >= 72 && extra.length <= 3 && missing.length <= 2;
       const strong = (score >= 88 && sequenceCoverage >= 0.9 && extra.length <= 1 && missing.length <= 1 && heardSet.size >= Math.min(5, target.length) && signatureMissing.length === 0) || phraseStrong;
       return {
@@ -3135,6 +3878,10 @@ function matchRagas(heardIntervals, candidates = ragas, heardSequence = []) {
         ragaId: raga.ragaId || raga.id,
         name: raga.name,
         system: raga.system,
+        sampleCount: raga.sampleCount,
+        fingerprintScore: fingerprint?.score || 0,
+        fingerprintPathScore: fingerprint?.pathScore || 0,
+        fingerprintSamples: fingerprint?.sampleCount || 0,
         score,
         sequenceScore: Math.round(sequenceCoverage * 100),
         phraseScore: Math.round(phraseCoverage * 100),
@@ -3146,15 +3893,129 @@ function matchRagas(heardIntervals, candidates = ragas, heardSequence = []) {
       };
     })
     .sort((a, b) => b.score - a.score)
-    .filter((match) => match.score > 15);
+    .filter((match) => match.score > 15), heardSet, heardSequence, syllableEvidence, heardCounts);
+}
+
+function applyRagaConfusionRules(matches, heardSet, heardSequence, syllableEvidence = null, heardCounts = new Map()) {
+  const has = (interval) => heardSet.has(interval);
+  const count = (interval) => heardCounts.get(interval) || 0;
+  const strongCount = Math.max(8, Math.max(...Array.from(heardCounts.values()), 1) * 0.18);
+  const hasHeld = (interval) => has(interval) && count(interval) >= strongCount;
+  const hasOrdered = (pattern) => longestCommonSubsequenceLength(heardSequence, pattern) >= pattern.length;
+  const syllables = syllableEvidence?.labels || [];
+  const hasSyllable = (label) => syllables.includes(label);
+  const hasSyllableOrder = (pattern) => longestCommonSubsequenceLength(syllables, pattern) >= pattern.length;
+  const mohanaSkeleton = has(0) && has(4) && has(7) && has(9) && (has(2) || heardSequence.length >= 5);
+  const mohanaPhrase = hasOrdered([0, 4, 7, 9, 0]) || hasOrdered([0, 9, 7, 4, 2, 0]) || hasOrdered([0, 4, 7, 9]) || hasSyllableOrder(['S', 'G', 'P', 'D']);
+  const hasHeldMaOrNi = hasHeld(5) || hasHeld(6) || hasHeld(11);
+  const hasHeldNi = hasHeld(11);
+  const hasHeldMa = hasHeld(5) || hasHeld(6);
+  const bilahariAscent = hasOrdered([0, 2, 4, 7]) || (has(0) && has(2) && has(4) && has(7));
+  const bilahariDescentBody = hasOrdered([7, 5, 4, 2, 0]) || (hasHeld(5) && has(4) && has(2) && has(0));
+  const ambiguousUpperDn = has(10) && !has(8);
+  const syllableBilahari = hasSyllableOrder(['S', 'R', 'G', 'P', 'D', 'S']) && hasSyllableOrder(['S', 'N', 'D', 'P', 'M', 'G', 'R', 'S']);
+  const bilahariAmbiguousShape = (bilahariAscent && bilahariDescentBody && ambiguousUpperDn) || syllableBilahari;
+
+  return matches
+    .map((match) => {
+      let score = match.score;
+      const reasons = [];
+
+      if (mohanaSkeleton && mohanaPhrase && !hasHeldMaOrNi) {
+        if (match.id === 'mohana' || normalizeRagaSearchText(match.name) === 'mohana') {
+          score += 18;
+          reasons.push('Mohana skeleton held; no held Ma/Ni.');
+        }
+        if (['shyam-bilahari', 'bilahari', 'hamsadhwani', 'shankarabharanam_bilawal'].includes(match.id) || ['bilahari', 'hamsadhwani', 'shankarabharanam'].includes(normalizeRagaSearchText(match.name))) {
+          score -= match.id === 'hamsadhwani' ? 24 : 18;
+          reasons.push('Rejected in Mohana battle: required held Ma/Ni was not present.');
+        }
+      }
+
+      if (match.id === 'hamsadhwani' && has(9) && !hasHeldNi) {
+        score -= 20;
+        reasons.push('Hamsadhwani needs held N3; D2 was held instead.');
+      }
+      if (match.id === 'mohana' && hasHeldMa) {
+        score -= 30;
+        reasons.push('Mohana rejected: held Ma was detected.');
+      }
+      if (match.id === 'mohana' && hasHeldNi) {
+        score -= 24;
+        reasons.push('Mohana rejected: held N3 was detected.');
+      }
+      if ((match.id === 'bilahari' || normalizeRagaSearchText(match.name) === 'bilahari') && mohanaSkeleton && !hasHeld(5) && !hasHeld(11)) {
+        score -= 22;
+        reasons.push('Bilahari softened: Ma/Ni were not held strongly enough; Mohana remains possible.');
+      }
+      if (bilahariAmbiguousShape) {
+        if (match.id === 'bilahari' || match.id === 'shyam-bilahari') {
+          score += syllableBilahari ? 34 : 24;
+          reasons.push(syllableBilahari ? 'Clock 0 heard Bilahari swara syllable path.' : 'Bilahari shape held; upper D/N was captured as ambiguous D3/N2.');
+        }
+        if (['kedaragowla', 'madhyamavati'].includes(match.id)) {
+          score -= syllableBilahari ? 36 : 26;
+          reasons.push(syllableBilahari ? 'Rejected in Bilahari battle: syllables included Ni-Da-Pa-Ma-Ga-Ri-Sa.' : 'Rejected in Bilahari battle: G3 ascent plus descent Ma-Ga-Ri-Sa points away from this raga.');
+        }
+        if (match.id === 'kambhoji') {
+          score -= 12;
+          reasons.push('Kambhoji possible color, but Bilahari-style ascent was stronger.');
+        }
+      }
+
+      return {
+        ...match,
+        score: Math.min(100, Math.max(0, score)),
+        confusionNotes: reasons
+      };
+    })
+    .sort((a, b) => b.score - a.score);
 }
 
 function detectPitch(buffer, sampleRate) {
-  let rms = 0;
-  for (const sample of buffer) rms += sample * sample;
-  rms = Math.sqrt(rms / buffer.length);
+  const rms = calculateRms(buffer);
   if (rms < 0.01) return 0;
 
+  try {
+    const candidates = [
+      normalizePitchResult(yin(buffer, { fs: sampleRate, threshold: 0.12 })),
+      normalizePitchResult(mcleod(buffer, { fs: sampleRate }))
+    ]
+      .filter(Boolean)
+      .filter((result) => result.freq >= 75 && result.freq <= 950)
+      .filter((result) => result.clarity >= 0.7);
+
+    if (candidates.length >= 2) {
+      const [primary, secondary] = candidates;
+      const cents = Math.abs(1200 * Math.log2(primary.freq / secondary.freq));
+      if (cents <= 70) return median(candidates.map((result) => result.freq));
+      return primary.clarity >= secondary.clarity ? primary.freq : secondary.freq;
+    }
+
+    if (candidates.length === 1) return candidates[0].freq;
+  } catch {
+    // Fall back to the original autocorrelation path if the browser detector fails.
+  }
+
+  return detectPitchByAutocorrelation(buffer, sampleRate, rms);
+}
+
+function normalizePitchResult(result) {
+  if (!result || !Number.isFinite(result.freq)) return null;
+  return {
+    freq: result.freq,
+    clarity: Number.isFinite(result.clarity) ? result.clarity : 0
+  };
+}
+
+function calculateRms(buffer) {
+  let rms = 0;
+  for (const sample of buffer) rms += sample * sample;
+  return Math.sqrt(rms / buffer.length);
+}
+
+function detectPitchByAutocorrelation(buffer, sampleRate, rms = calculateRms(buffer)) {
+  if (rms < 0.01) return 0;
   let bestOffset = -1;
   let bestCorrelation = 0;
   const minFrequency = 80;
@@ -3176,6 +4037,27 @@ function detectPitch(buffer, sampleRate) {
 
   if (bestCorrelation < 0.002 || bestOffset <= 0) return 0;
   return sampleRate / bestOffset;
+}
+
+function smoothDetectedFrequency(session, frequency) {
+  if (!frequency) return 0;
+  if (frequency < 75 || frequency > 950) return 0;
+
+  const last = session.lastAcceptedFrequency;
+  if (last) {
+    const cents = Math.abs(1200 * Math.log2(frequency / last));
+    if (cents > 760 && cents < 1050) return 0;
+  }
+
+  session.pitchWindow.push(frequency);
+  if (session.pitchWindow.length > 5) session.pitchWindow.shift();
+  const smoothed = median(session.pitchWindow);
+  if (last) {
+    const smoothedCents = Math.abs(1200 * Math.log2(smoothed / last));
+    if (smoothedCents > 1050) return 0;
+  }
+  session.lastAcceptedFrequency = smoothed;
+  return smoothed;
 }
 
 function normalizeSwara(swara) {

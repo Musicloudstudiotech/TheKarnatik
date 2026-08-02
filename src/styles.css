@@ -155,7 +155,7 @@ button {
 .app-shell {
   min-height: 100vh;
   display: grid;
-  grid-template-rows: 72px 1fr 78px;
+  grid-template-rows: 72px 1fr;
 }
 
 .topbar {
@@ -200,7 +200,7 @@ button {
 
 .nav {
   justify-content: center;
-  gap: 28px;
+  gap: 18px;
 }
 
 .nav-item, .icon-button, .system-switch, .notation-button, .add-button, .quick-actions button, .phrase-list button, .notation-controls button, .practice-grid button, .start-button, .transport button, .player label button {
@@ -278,6 +278,19 @@ button {
   display: grid;
   grid-template-columns: 340px minmax(560px, 1fr) 420px;
   border-bottom: 1px solid var(--line);
+}
+
+.workspace.workspace-no-companion {
+  grid-template-columns: 340px minmax(680px, 1fr);
+}
+
+.workspace.workspace-full {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.workspace-full .raga-pane {
+  width: min(100%, 1280px);
+  margin: 0 auto;
 }
 
 .library-pane, .raga-pane, .companion-pane {
@@ -2750,6 +2763,58 @@ h3 {
   border-top: 1px solid var(--line);
 }
 
+.ragadna-main-analysis {
+  padding-top: 26px;
+  margin-top: 26px;
+  border-top: 1px solid var(--line);
+}
+
+.ragadna-main-flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+
+.ragadna-main-flow span {
+  border: 1px solid rgba(7, 91, 97, 0.2);
+  border-radius: 7px;
+  background: rgba(223, 236, 235, 0.52);
+  color: var(--teal-dark);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 9px 10px;
+}
+
+.ragadna-main-notes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.ragadna-main-notes article {
+  border: 1px dashed rgba(7, 91, 97, 0.22);
+  border-radius: 7px;
+  background: rgba(255, 253, 247, 0.78);
+  padding: 13px;
+}
+
+.ragadna-main-notes strong {
+  display: block;
+  color: var(--teal);
+  font-size: 14px;
+  line-height: 1.2;
+  margin-bottom: 6px;
+}
+
+.ragadna-main-notes p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.42;
+  margin: 0;
+}
+
 .kanban-board {
   display: grid;
   grid-template-columns: repeat(4, minmax(150px, 1fr));
@@ -2917,6 +2982,56 @@ h3 {
   padding: 18px 24px 0;
 }
 
+.ragadna-analysis-card {
+  border-top: 1px solid var(--line);
+  margin: 20px -24px 0;
+  padding: 18px 24px 0;
+}
+
+.ragadna-analysis-flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 0 0 10px;
+}
+
+.ragadna-analysis-flow b {
+  border: 1px solid rgba(7, 91, 97, 0.18);
+  border-radius: 7px;
+  background: rgba(223, 236, 235, 0.48);
+  color: var(--teal-dark);
+  font-size: 11px;
+  line-height: 1;
+  padding: 7px 8px;
+}
+
+.ragadna-analysis-notes {
+  display: grid;
+  gap: 8px;
+}
+
+.ragadna-analysis-notes article {
+  border: 1px dashed rgba(7, 91, 97, 0.2);
+  border-radius: 7px;
+  background: rgba(255, 253, 247, 0.72);
+  padding: 9px 10px;
+}
+
+.ragadna-analysis-notes strong {
+  display: block;
+  color: var(--teal);
+  font-size: 12px;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+.ragadna-analysis-notes p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  margin: 0;
+}
+
 .raga-detect-status {
   display: flex;
   justify-content: space-between;
@@ -3008,6 +3123,253 @@ h3 {
   line-height: 1.35;
 }
 
+.heard-strip.rejected {
+  border-color: rgba(154, 74, 55, 0.24);
+  background: rgba(255, 238, 232, 0.5);
+}
+
+.heard-strip.rejected span {
+  color: #9a4a37;
+}
+
+.recording-analysis-strip {
+  border: 1px solid rgba(180, 137, 43, 0.34);
+  border-radius: 7px;
+  background: rgba(255, 246, 224, 0.58);
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.recording-analysis-strip span {
+  display: block;
+  color: #7b5a12;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+
+.recording-analysis-strip p {
+  color: #3d3a31;
+  font-size: 12px;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.recording-analysis-strip.wide p {
+  font-size: 14px;
+}
+
+.ragadna-debug-layout {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.78fr) minmax(440px, 1.22fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.raga-dna-page .raga-detect-card,
+.raga-detection-panel {
+  min-width: 0;
+}
+
+.raga-detection-panel:not(.compact) {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 253, 247, 0.72);
+  padding: 16px;
+}
+
+.ragadna-detail-panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 253, 247, 0.72);
+  padding: 16px;
+}
+
+.ragadna-strength-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.ragadna-strength-grid article {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: rgba(255, 253, 247, 0.78);
+  padding: 12px;
+  min-width: 0;
+}
+
+.ragadna-strength-grid span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 5px;
+}
+
+.ragadna-strength-grid strong {
+  display: block;
+  color: var(--teal-dark);
+  font-size: 24px;
+  line-height: 1.05;
+  margin-bottom: 6px;
+}
+
+.ragadna-strength-grid p {
+  margin: 0;
+  color: #4e575a;
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.frequency-table {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.frequency-table-head,
+.frequency-row {
+  display: grid;
+  grid-template-columns: 44px 1.15fr 0.7fr 0.8fr 0.8fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.frequency-table-head {
+  background: rgba(223, 236, 235, 0.7);
+  color: var(--teal);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 10px 12px;
+}
+
+.frequency-row {
+  border-top: 1px solid var(--line);
+  color: #30383a;
+  padding: 10px 12px;
+}
+
+.frequency-row strong {
+  color: var(--teal-dark);
+}
+
+.empty-analysis-box {
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  padding: 18px;
+  margin-bottom: 12px;
+}
+
+.ragadna-match-table {
+  display: grid;
+  gap: 10px;
+}
+
+.ragadna-match-table article {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: rgba(255, 253, 247, 0.78);
+  padding: 12px;
+}
+
+.ragadna-match-table strong,
+.ragadna-match-table span,
+.ragadna-match-table p,
+.ragadna-match-table em {
+  display: block;
+}
+
+.ragadna-match-table strong {
+  color: var(--teal-dark);
+  font-size: 20px;
+  margin-bottom: 3px;
+}
+
+.ragadna-match-table span {
+  color: #30383a;
+  font-weight: 800;
+  margin-bottom: 5px;
+}
+
+.ragadna-match-table p,
+.ragadna-match-table em {
+  color: var(--muted);
+  line-height: 1.35;
+  margin: 0;
+}
+
+.ragadna-match-table em {
+  margin-top: 5px;
+  font-style: normal;
+}
+
+.evidence-strip {
+  border: 1px solid rgba(8, 102, 106, 0.18);
+  border-radius: 7px;
+  background: rgba(255, 253, 247, 0.76);
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.evidence-strip > span {
+  display: block;
+  color: var(--teal);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+
+.evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  gap: 7px;
+}
+
+.evidence-chip {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--paper);
+  padding: 7px;
+  min-width: 0;
+}
+
+.evidence-chip b,
+.evidence-chip strong,
+.evidence-chip small {
+  display: block;
+}
+
+.evidence-chip b {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.evidence-chip strong {
+  color: var(--teal-dark);
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.evidence-chip small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
 .raga-match-list {
   display: grid;
   gap: 8px;
@@ -3021,6 +3383,11 @@ h3 {
   padding: 10px;
   text-align: left;
   cursor: pointer;
+}
+
+.raga-match-list button.debug-candidate {
+  border-style: dashed;
+  opacity: 0.82;
 }
 
 .raga-match-list strong,
@@ -3322,6 +3689,120 @@ input[type="range"] {
   font-weight: 700;
 }
 
+.shruthi-layout {
+  display: grid;
+  grid-template-columns: minmax(420px, 1fr) minmax(360px, 0.85fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.shruthi-tool-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 253, 247, 0.74);
+  padding: 18px;
+}
+
+.shruthi-tool-card .tanpura-body {
+  grid-template-columns: 120px 1fr;
+}
+
+.shruthi-tool-card .tanpura-visual {
+  height: 280px;
+  border-radius: 58px 58px 32px 32px;
+}
+
+.shruthi-tool-card .tanpura-visual span:nth-child(1) { left: 42px; }
+.shruthi-tool-card .tanpura-visual span:nth-child(2) { left: 54px; }
+.shruthi-tool-card .tanpura-visual span:nth-child(3) { left: 66px; }
+.shruthi-tool-card .tanpura-visual span:nth-child(4) { left: 78px; }
+
+.metronome-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.metronome-readout {
+  min-height: 150px;
+  border: 1px solid rgba(7, 91, 97, 0.2);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(223, 236, 235, 0.72), rgba(255, 253, 247, 0.86));
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 4px;
+}
+
+.metronome-readout span,
+.metronome-readout small {
+  color: var(--muted);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.metronome-readout strong {
+  color: var(--teal-dark);
+  font-size: 64px;
+  line-height: 0.95;
+}
+
+.beat-meter.large {
+  justify-content: center;
+}
+
+.beat-meter.large span {
+  width: 42px;
+  height: 42px;
+  border-color: rgba(7, 91, 97, 0.24);
+  color: var(--teal-dark);
+  background: rgba(255, 253, 247, 0.78);
+}
+
+.beat-meter.large span.active {
+  background: var(--teal);
+  color: white;
+  box-shadow: 0 0 0 6px rgba(7, 91, 97, 0.12);
+}
+
+.shruthi-tool-card .tempo-control,
+.shruthi-tool-card .metro-volume {
+  display: grid;
+  grid-template-columns: auto 36px 1fr 48px 36px;
+  gap: 8px;
+  align-items: center;
+  color: #394346;
+  font-weight: 800;
+}
+
+.shruthi-tool-card .metro-volume {
+  grid-template-columns: auto 1fr 64px;
+}
+
+.shruthi-tool-card .tempo-control button,
+.secondary-control {
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--paper);
+  color: var(--teal-dark);
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.shruthi-tool-card .tempo-control strong,
+.shruthi-tool-card .metro-volume strong {
+  color: var(--teal-dark);
+  text-align: center;
+}
+
+.secondary-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
 .player {
   display: grid;
   grid-template-columns: 280px 1fr auto auto minmax(160px, 220px) 54px;
@@ -3476,6 +3957,10 @@ input[type="range"] {
     grid-template-columns: 1fr;
   }
 
+  .ragadna-main-notes {
+    grid-template-columns: 1fr;
+  }
+
   .ear-workspace {
     grid-template-columns: 220px 1fr;
   }
@@ -3534,8 +4019,17 @@ input[type="range"] {
     padding: 22px 18px;
   }
 
-  .raga-header, .content-split, .scale-grid, .facts-row, .practice-grid, .tanpura-body, .lineage-grid, .legend-grid, .catalogue-status, .janya-catalogue, .chakra-grid, .branch-grid, .quiz-score, .quiz-grid, .exercise-topline, .exercise-options, .ear-levels, .ear-workspace, .database-strip, .recognition-options, .concert-search-panel, .concert-submit-panel, .concert-source-row, .concert-grid, .chord-control-panel, .chord-tool-grid, .manual-chord-checker {
+  .raga-header, .content-split, .scale-grid, .facts-row, .practice-grid, .tanpura-body, .shruthi-layout, .lineage-grid, .legend-grid, .catalogue-status, .janya-catalogue, .chakra-grid, .branch-grid, .quiz-score, .quiz-grid, .exercise-topline, .exercise-options, .ear-levels, .ear-workspace, .database-strip, .recognition-options, .concert-search-panel, .concert-submit-panel, .concert-source-row, .concert-grid, .chord-control-panel, .chord-tool-grid, .manual-chord-checker, .ragadna-debug-layout, .ragadna-strength-grid {
     grid-template-columns: 1fr;
+  }
+
+  .frequency-table {
+    overflow-x: auto;
+  }
+
+  .frequency-table-head,
+  .frequency-row {
+    min-width: 560px;
   }
 
   .ear-drill-head {
