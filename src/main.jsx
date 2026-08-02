@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { mcleod, yin } from '@audio/pitch';
 import {
+  ArrowRight,
   BookOpen,
   CalendarDays,
   ChevronDown,
@@ -4827,6 +4828,190 @@ function ControlRow({ label, value, accent }) {
   );
 }
 
+const legacyVoices = [
+  {
+    name: 'Purandara Dasa',
+    role: 'The pedagogue',
+    text: 'The Sangeeta Pitamaha gave generations of learners a graded path into music, joining devotion, language, and disciplined practice.'
+  },
+  {
+    name: 'T. Chowdiah',
+    role: 'The innovator',
+    text: 'From Mysuru came a violinist who redesigned his instrument for the concert hall and expanded how Karnatik music could be heard.'
+  },
+  {
+    name: 'R.K. Srikantan',
+    role: 'The scholar-performer',
+    text: 'A life of rigorous singing and teaching carried the Mysuru tradition forward with clarity, restraint, and depth.'
+  },
+  {
+    name: 'Gangubai Hangal',
+    role: 'The uncompromising voice',
+    text: 'From Dharwad, her commanding Kirana gayaki showed that Karnataka could be an essential home for Hindustani music too.'
+  },
+  {
+    name: 'Bhimsen Joshi',
+    role: 'The searching voice',
+    text: 'Born in Gadag and formed through the guru-shishya tradition, his music travelled across language, region, and generations.'
+  }
+];
+
+function LandingPage({
+  email,
+  setEmail,
+  password,
+  setPassword,
+  error,
+  message,
+  submitting,
+  handleAuth
+}) {
+  return (
+    <main className="landing-page">
+      <header className="landing-nav">
+        <a className="landing-brand" href="#top" aria-label="Karnatik.ai home">
+          <span className="landing-brand-mark">K</span>
+          <span>Karnatik.ai</span>
+        </a>
+        <nav aria-label="Landing page navigation">
+          <a href="#story">Our story</a>
+          <a href="#legacy">Legacy</a>
+          <a href="#beta">Private beta</a>
+        </nav>
+        <a className="landing-enter" href="#beta">Sign in <ArrowRight size={17} /></a>
+      </header>
+
+      <section className="landing-hero" id="top">
+        <div className="landing-hero-shade" />
+        <div className="landing-hero-content">
+          <p className="landing-kicker">Born in Karnataka. Built for Indian music.</p>
+          <h1>Karnatik.ai</h1>
+          <p className="landing-lede">Where India&apos;s musical memory becomes a living intelligence.</p>
+          <p className="landing-intro">A new home for learning, practising, preserving, and understanding the many traditions of Indian music.</p>
+          <div className="landing-hero-actions">
+            <a className="landing-primary" href="#story">Discover the story <ArrowRight size={18} /></a>
+            <a className="landing-secondary" href="#beta">Enter private beta</a>
+          </div>
+        </div>
+        <p className="landing-image-note">An imagined Mysuru durbar, where musical traditions met under royal patronage.</p>
+      </section>
+
+      <section className="landing-statement" id="story">
+        <p className="landing-section-label">What Karnatik means</p>
+        <h2>Not one genre. A generous musical home.</h2>
+        <div className="landing-story-columns">
+          <p>Karnatik is our name for a living continuum. It begins in Karnataka, but it is not bounded by geography, language, or one classical system.</p>
+          <p>For centuries, this land made room for Haridasa poetry, Karnatik scholarship, Hindustani gayaki, instrumental invention, folk memory, and royal experimentation. Traditions did not merely coexist here. They listened to one another.</p>
+        </div>
+      </section>
+
+      <section className="landing-origin">
+        <div className="landing-origin-copy">
+          <p className="landing-section-label">A method becomes a movement</p>
+          <h2>Purandara Dasa placed learning at the heart of music.</h2>
+          <p>Revered as the Sangeeta Pitamaha, Purandara Dasa helped shape a systematic path for musical learning. His legacy reminds us that tradition survives when knowledge can be taught, practised, remembered, and passed forward.</p>
+        </div>
+        <blockquote>
+          <span>Our starting belief</span>
+          Indian music deserves technology that understands its own grammar, pedagogy, and ways of listening.
+        </blockquote>
+      </section>
+
+      <section className="landing-patronage">
+        <div>
+          <p className="landing-section-label">The Mysuru imagination</p>
+          <h2>A court that did more than preserve culture. It enabled culture to evolve.</h2>
+        </div>
+        <div className="landing-patronage-copy">
+          <p>The Wadiyars of Mysuru sustained musicians, composers, dancers, scholars, and orchestras. Their courts welcomed Karnatik, Hindustani, and Western musical thought, while Mysuru developed a distinctive voice of its own.</p>
+          <p>That spirit of patronage matters to Karnatik.ai: create the conditions, respect the practitioner, and let knowledge travel further than it could before.</p>
+        </div>
+      </section>
+
+      <section className="landing-legacy" id="legacy">
+        <div className="landing-legacy-heading">
+          <p className="landing-section-label">Many lineages, one musical home</p>
+          <h2>Voices that made Karnataka resonate across India.</h2>
+        </div>
+        <div className="landing-legacy-list">
+          {legacyVoices.map((voice, index) => (
+            <article key={voice.name}>
+              <span>{String(index + 1).padStart(2, '0')}</span>
+              <div>
+                <p>{voice.role}</p>
+                <h3>{voice.name}</h3>
+              </div>
+              <p>{voice.text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="landing-future">
+        <p className="landing-section-label">The next chapter</p>
+        <h2>From oral inheritance to living intelligence.</h2>
+        <p>Karnatik.ai brings this cultural hospitality into the digital age: tools that can listen, teach, accompany, test, explain, and eventually understand Indian music on its own terms.</p>
+        <div className="landing-pillars" aria-label="Karnatik.ai vision">
+          <span>Learn with context</span>
+          <span>Practise with precision</span>
+          <span>Preserve with dignity</span>
+          <span>Build with musicians</span>
+        </div>
+      </section>
+
+      <section className="landing-beta" id="beta">
+        <div className="landing-beta-copy">
+          <p className="landing-section-label">Karnatik.ai private beta</p>
+          <h2>Help shape the next home for Indian music.</h2>
+          <p>Our first circle brings musicians, teachers, and serious learners into the product while the listening intelligence continues to learn.</p>
+        </div>
+        <form className="landing-login" onSubmit={handleAuth}>
+          <h3>Enter the beta</h3>
+          <label>
+            Email
+            <input
+              value={email}
+              onChange={(event) => {
+                setEmail(event.target.value);
+              }}
+              placeholder="you@example.com"
+              type="email"
+              autoComplete="email"
+              required
+            />
+          </label>
+          <label>
+            Password
+            <input
+              value={password}
+              onChange={(event) => {
+                setPassword(event.target.value);
+              }}
+              placeholder="Minimum 6 characters"
+              type="password"
+              autoComplete="current-password"
+              required
+              minLength={6}
+            />
+          </label>
+          {error ? <p className="access-error">{error}</p> : null}
+          {message ? <p className="access-message">{message}</p> : null}
+          <button type="submit" disabled={submitting}>{submitting ? 'Please wait...' : <>Sign in <ArrowRight size={18} /></>}</button>
+        </form>
+      </section>
+
+      <footer className="landing-footer">
+        <div className="landing-brand">
+          <span className="landing-brand-mark">K</span>
+          <span>Karnatik.ai</span>
+        </div>
+        <p>Indian music, heard on its own terms.</p>
+        <p>Private beta · 2026</p>
+      </footer>
+    </main>
+  );
+}
+
 function AuthGate() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(isSupabaseConfigured);
@@ -4904,63 +5089,39 @@ function AuthGate() {
     return <App user={session.user} onSignOut={signOut} />;
   }
 
-  return (
-    <main className="access-gate">
-      <section className="access-panel">
-        <div className="brand access-brand">
-          <span className="brand-mark">R</span>
-          <span>RAGA Companion</span>
-        </div>
-        <p className="access-kicker">Karnatik.ai private beta</p>
-        <h1>Indian music intelligence, built for serious practice.</h1>
-        {isSupabaseConfigured ? (
-          <>
-            <p className="access-copy">Sign in to explore the private Karnatik.ai workspace for raga learning, ear training, shruthi, rhythm, and musician-first AI tools.</p>
-            <form className="access-form" onSubmit={handleAuth}>
-              <label>
-                Email
-                <input
-                  value={email}
-                  onChange={(event) => {
-                    setEmail(event.target.value);
-                    setError('');
-                  }}
-                  placeholder="you@example.com"
-                  type="email"
-                  autoComplete="email"
-                  autoFocus
-                  required
-                />
-              </label>
-              <label>
-                Password
-                <input
-                  value={password}
-                  onChange={(event) => {
-                    setPassword(event.target.value);
-                    setError('');
-                  }}
-                  placeholder="Minimum 6 characters"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  minLength={6}
-                />
-              </label>
-              {error ? <p className="access-error">{error}</p> : null}
-              {message ? <p className="access-message">{message}</p> : null}
-              <button type="submit" disabled={submitting}>{submitting ? 'Please wait...' : 'Sign in'}</button>
-            </form>
-          </>
-        ) : (
+  if (!isSupabaseConfigured) {
+    return (
+      <main className="access-gate">
+        <section className="access-panel">
+          <p className="access-kicker">Karnatik.ai private beta</p>
+          <h1>Indian music intelligence, built for serious practice.</h1>
           <div className="auth-setup">
             <p className="access-copy">Authentication is ready in the app, but Supabase environment variables are not configured yet.</p>
             <code>VITE_SUPABASE_URL</code>
             <code>VITE_SUPABASE_ANON_KEY</code>
           </div>
-        )}
-      </section>
-    </main>
+        </section>
+      </main>
+    );
+  }
+
+  return (
+    <LandingPage
+      email={email}
+      setEmail={(value) => {
+        setEmail(value);
+        setError('');
+      }}
+      password={password}
+      setPassword={(value) => {
+        setPassword(value);
+        setError('');
+      }}
+      error={error}
+      message={message}
+      submitting={submitting}
+      handleAuth={handleAuth}
+    />
   );
 }
 
