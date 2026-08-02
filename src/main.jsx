@@ -4890,7 +4890,6 @@ function LandingPage({
       <section className="landing-hero" id="top">
         <div className="landing-hero-shade" />
         <div className="landing-hero-content">
-          <p className="landing-kicker">Born in Karnataka. Built for Indian music.</p>
           <h1>Karnatik.ai</h1>
           <p className="landing-lede">Where India&apos;s musical memory becomes a living intelligence.</p>
           <p className="landing-intro">A new home for learning, practising, preserving, and understanding the many traditions of Indian music.</p>
