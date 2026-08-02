@@ -3,5 +3,9 @@
   "framework": "vite",
   "installCommand": "pnpm install",
   "buildCommand": "pnpm build",
-  "outputDirectory": "dist"
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/Kanban", "destination": "/index.html" },
+    { "source": "/kanban", "destination": "/index.html" }
+  ]
 }

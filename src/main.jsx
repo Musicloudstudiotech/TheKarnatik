@@ -6,8 +6,10 @@ import {
   CalendarDays,
   ChevronDown,
   Clock3,
+  Columns3,
   Compass,
   ClipboardList,
+  LockKeyhole,
   LogOut,
   MapPin,
   MessageCircle,
@@ -45,6 +47,15 @@ import ragadnaManifest from '../public/ragadna/ragadna-manifest.json';
 import ragadnaFeatureModel from '../data/raga-samples/ragadna-feature-model.json';
 
 const chromatic = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const KANBAN_OWNER_EMAIL = 'ramanujan.mk@musicloudstudio.com';
+
+function normalizeEmail(email) {
+  return String(email || '').trim().toLowerCase();
+}
+
+function pageFromLocation() {
+  return window.location.pathname.toLowerCase() === '/kanban' ? 'kanban' : 'practice';
+}
 const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const tamburaSamples = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const tamburaMaSamples = ['E', 'F', 'F#', 'G', 'G#'];
@@ -518,16 +529,6 @@ const referencePilotRagas = referenceRecordedSamples.map((sample) => {
 
 const allRagaDnaRagas = buildRagaDnaCandidates(ragadnaManifest.entries, referencePilotRagas);
 const ragaDnaFeatures = ragadnaFeatureModel.features || [];
-const ragaDnaSourceCounts = (ragadnaManifest.entries || []).reduce((acc, entry) => {
-  acc[entry.sourceSet] = (acc[entry.sourceSet] || 0) + 1;
-  return acc;
-}, {});
-const ragaDnaDatasetLabel = `${ragadnaFeatureModel.totalClips || ragadnaManifest.summary?.total || allRagaDnaRagas.length} RagaDNA samples`;
-const ragaDnaDatasetDetail = [
-  ragaDnaSourceCounts['reference-set-a'] ? `${ragaDnaSourceCounts['reference-set-a']} curated references` : '',
-  ragaDnaSourceCounts['test-ragas-2026-07-21'] ? `${ragaDnaSourceCounts['test-ragas-2026-07-21']} evaluation recordings` : '',
-  ragaDnaSourceCounts['random-raga-aarohanam-avarohanam'] ? `${ragaDnaSourceCounts['random-raga-aarohanam-avarohanam']} extended references` : ''
-].filter(Boolean).join(' + ');
 
 const ragaDnaAnalysisNotes = [
   {
@@ -547,63 +548,6 @@ const ragaDnaAnalysisNotes = [
     body: 'Replace the browser autocorrelation pitch tracker with pYIN/YIN-style contour tracking, then reintroduce melodic-surface scoring as debug evidence.'
   }
 ];
-
-const roadmapColumns = [
-  {
-    title: 'Done',
-    tone: 'done',
-    items: [
-      { title: 'Web prototype shell', meta: 'Practice console' },
-      { title: 'Tanpura sample playback', meta: 'Sa-Pa sample loop' },
-      { title: 'Pitch-aware metronome', meta: 'BPM, click volume, beat pulse' },
-      { title: 'Test builder', meta: 'Scale, chord, phrase prompts' },
-      { title: 'Chord Analyser v1', meta: 'Separate raga-aware composer tool' },
-      { title: 'Karnatik Ragas page', meta: '72 Melakarta chakras + legend' },
-      { title: 'Random quiz drill', meta: 'Melakarta, chakra, Janya recognition' },
-      { title: 'Database v1 module', meta: '206 entries across featured, Janaka, Janya, Hindustani' }
-    ]
-  },
-  {
-    title: 'In Progress',
-    tone: 'active',
-    items: [
-      { title: 'Phrase-level database review', meta: 'Arohana, avarohana, pakad, nyasa for catalogue entries' },
-      { title: 'Janaka/Janya catalogue expansion', meta: 'Grow beyond 75 reviewed Janya entries' },
-      { title: 'Raga detection rules', meta: 'Scale match + signature swaras' },
-      { title: 'Chord logic review', meta: 'Guru/composer validation for edge cases' },
-      { title: 'Competitive positioning', meta: 'Differentiate from Abhyas-style content libraries' }
-    ]
-  },
-  {
-    title: 'Next',
-    tone: 'next',
-    items: [
-      { title: 'AI interaction engine', meta: 'Guided answers from approved raga data' },
-      { title: 'Certification programs', meta: 'Levels, assessments, revenue model' },
-      { title: 'Teacher Studio / Academy instances', meta: 'Multi-tenant schools, batches, lessons, assignments, attendance, feedback, payments' },
-      { title: 'Raga ear training', meta: 'Arohana/Avarohana first, phrases later' },
-      { title: 'Interactive raga visualizations', meta: 'Relationships, Melakarta, similar ragas, mood, time-of-day, composer, Kriti explorers' },
-      { title: 'Time signatures / tala cycles', meta: 'Cycle accents and progress' },
-      { title: 'Host on thekarnatik.com', meta: 'Production build, domain route, QA' },
-      { title: 'Raga database expansion', meta: '100+ reviewed ragas' },
-      { title: 'PWA install path', meta: 'Mobile-ready web app before native apps' }
-    ]
-  },
-  {
-    title: 'Later',
-    tone: 'later',
-    items: [
-      { title: 'Sa-Ma-Pa-Sa drone mode', meta: 'Waiting for correct samples' },
-      { title: 'Tambura sample overhaul', meta: 'Loop-ready assets and mode variants' },
-      { title: 'Real vocal phrase library', meta: 'For ear training and detection' },
-      { title: 'Logic Pro AU plugin', meta: 'JUCE track after web launch' },
-      { title: 'Portable raga engine', meta: 'Shared data for web, PWA, AU/VST3' }
-    ]
-  }
-];
-
-
-
 
 function optionSet(answer, pool, seed = 0) {
   const uniquePool = pool.filter((item, index, list) => item !== answer && list.indexOf(item) === index);
@@ -832,7 +776,8 @@ const swaraRoleRank = {
 };
 
 function App({ user, onSignOut }) {
-  const [activePage, setActivePage] = useState('practice');
+  const canAccessKanban = normalizeEmail(user?.email) === KANBAN_OWNER_EMAIL;
+  const [activePage, setActivePage] = useState(pageFromLocation);
   const [system, setSystem] = useState('All');
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState('kalyani');
@@ -902,6 +847,21 @@ function App({ user, onSignOut }) {
   const showCompanionPane = activePage === 'practice';
   const harmony = useMemo(() => getHarmony(selected, pitch), [selected, pitch]);
   const activeTala = getActiveTala(practiceSystem, talaId);
+
+  useEffect(() => {
+    window.history.replaceState({ ...window.history.state, activePage }, '', window.location.href);
+    const handlePopState = (event) => {
+      setActivePage(event.state?.activePage || pageFromLocation());
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  function navigateToPage(page) {
+    setActivePage(page);
+    const path = page === 'kanban' ? '/Kanban' : '/';
+    window.history.pushState({ activePage: page }, '', path);
+  }
 
   useEffect(() => {
     if (tanpuraRef.current?.masterGain) {
@@ -1449,7 +1409,7 @@ function App({ user, onSignOut }) {
               processLog: [
                 'Mic connected.',
                 `Sa locked from your voice: ${session.root}.`,
-                `Comparing against ${ragaDnaDatasetLabel}: ${ragaDnaDatasetDetail}.`,
+                'Comparing stable pitch, swara path, and raga grammar evidence.',
                 describeSyllableLayer(session),
                 `Detected swaras so far: ${heardSwaras.map((item) => item.swara).join(' ') || 'waiting...'}`,
                 'Tap Stop & Identify after Arohana and Avarohana.'
@@ -1530,7 +1490,7 @@ function App({ user, onSignOut }) {
           'Mic connected.',
           'Listening stopped by you.',
           session.root ? `Detected Sa from voice: ${session.root}.` : 'I could not lock a stable Sa from the first note.',
-          `I did not get enough stable Arohana/Avarohana notes to compare against ${ragaDnaDatasetLabel}: ${ragaDnaDatasetDetail}.`
+          'I did not get enough stable Arohana/Avarohana notes to complete the comparison.'
         ],
         error: session.root
           ? `Sa detected: ${session.root}. Raga not detected yet. Try singing clear Arohana and Avarohana slowly.`
@@ -1564,7 +1524,7 @@ function App({ user, onSignOut }) {
       analysisSummary,
       matches,
       stage: confirmedMatch
-        ? `Likely raga: ${confirmedMatch.name} (${confirmedMatch.score}%) from ${ragaDnaDatasetLabel}.`
+        ? `Likely raga: ${confirmedMatch.name} (${confirmedMatch.score}%).`
         : tooManySwaras
           ? `Could not identify confidently. Too many swara variants were detected; Sa may be wrong or the scale was not sung steadily.`
           : `Could not identify the raga yet. Detected Sa is ${session.root}.`,
@@ -1572,7 +1532,7 @@ function App({ user, onSignOut }) {
         'Mic connected.',
         'Listening stopped by you.',
         `Sa detected from your voice: ${session.root}.`,
-        `Compared against ${ragaDnaDatasetLabel}: ${ragaDnaDatasetDetail}.`,
+        'Compared stable pitch, swara path, and raga grammar evidence.',
         describeSyllableLayer(session, true),
         `Clock 0 fallback path: ${pitchSyllables.join(' ') || 'not available'}.`,
         `Heard swaras: ${heardSwaras.map((item) => item.swara).join(' ')}.`,
@@ -1592,13 +1552,16 @@ function App({ user, onSignOut }) {
           <span>RAGA Companion</span>
         </div>
         <nav className="nav">
-          <button className={`nav-item ${activePage === 'practice' ? 'active' : ''}`} onClick={() => setActivePage('practice')}><Compass size={17} /> Practice</button>
-          <button className={`nav-item ${activePage === 'raga-dna' ? 'active' : ''}`} onClick={() => setActivePage('raga-dna')}><Search size={17} /> RagaDNA</button>
-          <button className={`nav-item ${activePage === 'shruthi' ? 'active' : ''}`} onClick={() => setActivePage('shruthi')}><Wind size={17} /> Shruthi &amp; Tala</button>
-          <button className={`nav-item ${activePage === 'chords' ? 'active' : ''}`} onClick={() => setActivePage('chords')}><Wand2 size={17} /> Chord Analyser</button>
-          <button className={`nav-item ${activePage === 'karnatik' ? 'active' : ''}`} onClick={() => setActivePage('karnatik')}><BookOpen size={17} /> Karnatik Ragas</button>
-          <button className={`nav-item ${activePage === 'quiz' ? 'active' : ''}`} onClick={() => setActivePage('quiz')}><ClipboardList size={17} /> Quiz</button>
-          <button className={`nav-item ${activePage === 'ear-training' ? 'active' : ''}`} onClick={() => setActivePage('ear-training')}><Music2 size={17} /> Ear Training</button>
+          <button className={`nav-item ${activePage === 'practice' ? 'active' : ''}`} onClick={() => navigateToPage('practice')}><Compass size={17} /> Practice</button>
+          <button className={`nav-item ${activePage === 'raga-dna' ? 'active' : ''}`} onClick={() => navigateToPage('raga-dna')}><Search size={17} /> RagaDNA</button>
+          <button className={`nav-item ${activePage === 'shruthi' ? 'active' : ''}`} onClick={() => navigateToPage('shruthi')}><Wind size={17} /> Shruthi &amp; Tala</button>
+          <button className={`nav-item ${activePage === 'chords' ? 'active' : ''}`} onClick={() => navigateToPage('chords')}><Wand2 size={17} /> Chord Analyser</button>
+          <button className={`nav-item ${activePage === 'karnatik' ? 'active' : ''}`} onClick={() => navigateToPage('karnatik')}><BookOpen size={17} /> Karnatik Ragas</button>
+          <button className={`nav-item ${activePage === 'quiz' ? 'active' : ''}`} onClick={() => navigateToPage('quiz')}><ClipboardList size={17} /> Quiz</button>
+          <button className={`nav-item ${activePage === 'ear-training' ? 'active' : ''}`} onClick={() => navigateToPage('ear-training')}><Music2 size={17} /> Ear Training</button>
+          {canAccessKanban ? (
+            <button className={`nav-item ${activePage === 'kanban' ? 'active' : ''}`} onClick={() => navigateToPage('kanban')}><Columns3 size={17} /> Kanban</button>
+          ) : null}
         </nav>
         <div className="top-actions">
           <span className="signed-in-user"><UserCircle2 size={18} /> {user?.email || 'Beta user'}</span>
@@ -1640,7 +1603,9 @@ function App({ user, onSignOut }) {
         </aside>
         )}
 
-        {activePage === 'raga-dna' ? (
+        {activePage === 'kanban' ? (
+          <KanbanPage canAccess={canAccessKanban} />
+        ) : activePage === 'raga-dna' ? (
           <RagaDnaPage ragaDetector={ragaDetector} startRagaDetection={startRagaDetection} selected={selected} pitch={pitch} />
         ) : activePage === 'shruthi' ? (
           <ShruthiPage
@@ -2055,6 +2020,101 @@ function ShruthiPage({
   );
 }
 
+function KanbanPage({ canAccess }) {
+  const [columns, setColumns] = useState([]);
+  const [status, setStatus] = useState(canAccess ? 'loading' : 'denied');
+  const [error, setError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    if (!canAccess || !supabase) return undefined;
+
+    let cancelled = false;
+    async function loadKanban() {
+      setStatus('loading');
+      setError('');
+      try {
+        const { data, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError || !data.session?.access_token) {
+          throw new Error('Your secure session could not be verified. Please sign in again.');
+        }
+
+        const response = await fetch('/api/kanban', {
+          headers: { Authorization: `Bearer ${data.session.access_token}` }
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload.error || 'The Kanban board could not be loaded.');
+        }
+        if (!cancelled) {
+          setColumns(Array.isArray(payload.columns) ? payload.columns : []);
+          setStatus('ready');
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setError(loadError.message || 'The Kanban board could not be loaded.');
+          setStatus('error');
+        }
+      }
+    }
+
+    loadKanban();
+    return () => {
+      cancelled = true;
+    };
+  }, [canAccess, reloadKey]);
+
+  if (!canAccess) {
+    return (
+      <section className="raga-pane kanban-page private-page-state">
+        <LockKeyhole size={28} />
+        <h1>Page not available</h1>
+        <p>This page is not available for your account.</p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="raga-pane kanban-page">
+      <div className="raga-header">
+        <div>
+          <h1>Product Kanban</h1>
+          <p>Private feature tracking for Karnatik.ai.</p>
+        </div>
+        <span className="owner-only-label"><LockKeyhole size={15} /> Owner only</span>
+      </div>
+
+      {status === 'loading' ? (
+        <div className="private-page-state compact">
+          <p>Loading your private board...</p>
+        </div>
+      ) : status === 'error' ? (
+        <div className="private-page-state compact">
+          <h2>Kanban unavailable</h2>
+          <p>{error}</p>
+          <button className="primary-small" onClick={() => setReloadKey((value) => value + 1)}>Retry</button>
+        </div>
+      ) : (
+        <div className="kanban-board">
+          {columns.map((column) => (
+            <div className={`kanban-column ${column.tone}`} key={column.title}>
+              <h3>{column.title}</h3>
+              <div className="kanban-items">
+                {column.items.map((item) => (
+                  <article key={item.title}>
+                    <strong>{item.title}</strong>
+                    <span>{item.meta}</span>
+                  </article>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function RagaDnaPage({ ragaDetector, startRagaDetection, selected, pitch }) {
   const topMatch = ragaDetector.matches?.[0];
   return (
@@ -2082,11 +2142,6 @@ function RagaDnaPage({ ragaDetector, startRagaDetection, selected, pitch }) {
           </div>
 
           <div className="ragadna-strength-grid">
-            <article>
-              <span>Sample Library</span>
-              <strong>{ragaDnaDatasetLabel}</strong>
-              <p>{ragaDnaDatasetDetail || 'Manifest source breakdown pending.'}</p>
-            </article>
             <article>
               <span>Accepted for Decision</span>
               <strong>{ragaDetector.heardSwaras?.length || 0}</strong>

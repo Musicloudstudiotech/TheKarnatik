@@ -2821,6 +2821,44 @@ h3 {
   gap: 12px;
 }
 
+.kanban-page {
+  padding-bottom: 40px;
+}
+
+.owner-only-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(7, 91, 97, 0.24);
+  border-radius: 7px;
+  color: var(--teal-dark);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 9px 11px;
+}
+
+.private-page-state {
+  align-content: center;
+  justify-items: start;
+  min-height: 420px;
+}
+
+.private-page-state.compact {
+  border-top: 1px solid var(--line);
+  min-height: 220px;
+  padding-top: 28px;
+}
+
+.private-page-state h1,
+.private-page-state h2,
+.private-page-state p {
+  margin: 0 0 10px;
+}
+
+.private-page-state p {
+  color: var(--muted);
+}
+
 .kanban-column {
   border: 1px solid var(--line);
   background: rgba(255, 253, 247, 0.72);
