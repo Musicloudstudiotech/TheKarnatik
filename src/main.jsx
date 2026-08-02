@@ -8,7 +8,6 @@ import {
   Clock3,
   Compass,
   ClipboardList,
-  Library,
   LogOut,
   MapPin,
   MessageCircle,
@@ -152,6 +151,32 @@ const hindustaniSwaraDisplayAliases = {
 
 
 const systems = ['All', 'Hindustani', 'Karnatik'];
+
+const practiceSystems = [
+  { id: 'karnatik', label: 'Karnatik', hint: 'Tanpura, metronome, Karnatik tala cycles' },
+  { id: 'hindustani', label: 'Hindustani', hint: 'Tanpura, metronome, Hindustani tala cycles' }
+];
+
+const talaPresets = {
+  karnatik: [
+    { id: 'adi', name: 'Adi Tala', beats: 8, meter: '8 beat / 4+2+2', accents: [1, 5, 7] },
+    { id: 'rupaka', name: 'Rupaka Tala', beats: 3, meter: '3 beat / 1+2', accents: [1, 2] },
+    { id: 'misra-chapu', name: 'Misra Chapu', beats: 7, meter: '7 beat / 3+2+2', accents: [1, 4, 6] },
+    { id: 'khanda-chapu', name: 'Khanda Chapu', beats: 5, meter: '5 beat / 2+3', accents: [1, 3] },
+    { id: 'tisra-triputa', name: 'Tisra Triputa', beats: 7, meter: '7 beat / 3+2+2', accents: [1, 4, 6] }
+  ],
+  hindustani: [
+    { id: 'teentaal', name: 'Teentaal', beats: 16, meter: '16 beat / 4+4+4+4', accents: [1, 5, 13], khali: [9] },
+    { id: 'ektaal', name: 'Ektaal', beats: 12, meter: '12 beat / 2+2+2+2+2+2', accents: [1, 5, 9, 11], khali: [3, 7] },
+    { id: 'jhaptaal', name: 'Jhaptaal', beats: 10, meter: '10 beat / 2+3+2+3', accents: [1, 3, 8], khali: [6] },
+    { id: 'rupak', name: 'Rupak', beats: 7, meter: '7 beat / 3+2+2', accents: [4, 6], khali: [1] },
+    { id: 'dadra', name: 'Dadra', beats: 6, meter: '6 beat / 3+3', accents: [1], khali: [4] },
+    { id: 'keherwa', name: 'Keherwa', beats: 8, meter: '8 beat / 4+4', accents: [1], khali: [5] }
+  ]
+};
+
+const swaraPlaybackController = { current: null };
+const recordedPlaybackController = { current: null };
 const practiceSteps = ['Arohana-Avarohana', 'Pakad / Chalan', 'Alap Builder', 'Bandish / Kriti'];
 const concertListings = [
   {
@@ -715,6 +740,8 @@ function App({ user, onSignOut }) {
   const [beatCount, setBeatCount] = useState(0);
   const [tempo, setTempo] = useState(60);
   const [metronomeVolume, setMetronomeVolume] = useState(62);
+  const [practiceSystem, setPracticeSystem] = useState('karnatik');
+  const [talaId, setTalaId] = useState('adi');
   const [volume, setVolume] = useState(72);
   const [pitch, setPitch] = useState('C#');
   const [tanpuraMode, setTanpuraMode] = useState('sa-pa');
@@ -738,6 +765,7 @@ function App({ user, onSignOut }) {
   const detectorSessionRef = useRef(null);
   const ragaSessionRef = useRef(null);
   const tanpuraRef = useRef(null);
+  const tanpuraStartTokenRef = useRef(0);
   const metronomeRef = useRef(null);
   const [ragaDetector, setRagaDetector] = useState({
     status: 'idle',
@@ -766,6 +794,7 @@ function App({ user, onSignOut }) {
   const showLibraryPane = ['practice', 'chords'].includes(activePage);
   const showCompanionPane = activePage === 'practice';
   const harmony = useMemo(() => getHarmony(selected, pitch), [selected, pitch]);
+  const activeTala = getActiveTala(practiceSystem, talaId);
 
   useEffect(() => {
     if (tanpuraRef.current?.masterGain) {
@@ -782,7 +811,11 @@ function App({ user, onSignOut }) {
   }, [pitch, tanpuraMode]);
 
   useEffect(() => {
-    return () => stopTanpura();
+    return () => {
+      stopTanpura();
+      stopSwaraPlayback();
+      stopRecordedPlayback();
+    };
   }, []);
 
   useEffect(() => {
@@ -801,7 +834,7 @@ function App({ user, onSignOut }) {
       stopMetronome();
       startMetronome();
     }
-  }, [tempo, pitch, metronomeVolume]);
+  }, [tempo, pitch, metronomeVolume, practiceSystem, talaId]);
 
   useEffect(() => {
     return () => stopMetronome();
@@ -813,6 +846,8 @@ function App({ user, onSignOut }) {
 
   async function startTanpura() {
     stopTanpura();
+    const startToken = tanpuraStartTokenRef.current + 1;
+    tanpuraStartTokenRef.current = startToken;
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextClass) return;
 
@@ -827,6 +862,10 @@ function App({ user, onSignOut }) {
 
       const sample = nearestTamburaSample(pitch, tanpuraMode);
       const audioBuffer = await loadTamburaBuffer(context, pitch, tanpuraMode);
+      if (tanpuraStartTokenRef.current !== startToken) {
+        context.close();
+        return;
+      }
       const drone = { context, masterGain, sources: [], timers: [], stopped: false };
       tanpuraRef.current = drone;
       scheduleTamburaSegments(drone, audioBuffer, sample.rate, sample.note);
@@ -841,6 +880,7 @@ function App({ user, onSignOut }) {
   }
 
   function stopTanpura() {
+    tanpuraStartTokenRef.current += 1;
     const drone = tanpuraRef.current;
     if (!drone) {
       setTanpuraOn(false);
@@ -881,18 +921,22 @@ function App({ user, onSignOut }) {
     const context = new AudioContextClass();
     context.resume();
     let beat = 0;
+    const tala = getActiveTala(practiceSystem, talaId);
     const click = () => {
       const now = context.currentTime;
-      const currentBeat = (beat % 4) + 1;
+      const currentBeat = (beat % tala.beats) + 1;
       const oscillator = context.createOscillator();
       const gain = context.createGain();
       const sa = noteToFrequency(pitch, 5);
       const pa = sa * 1.5;
-      oscillator.type = beat % 4 === 0 ? 'triangle' : 'sine';
-      oscillator.frequency.value = beat % 4 === 0 ? sa : pa;
+      const isSam = currentBeat === 1;
+      const isAccent = tala.accents.includes(currentBeat);
+      const isKhali = tala.khali?.includes(currentBeat);
+      oscillator.type = isSam ? 'triangle' : isKhali ? 'sine' : 'square';
+      oscillator.frequency.value = isSam ? sa : isAccent ? pa : sa * 2;
       const clickGain = metronomeVolumeToGain(metronomeVolume);
       gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(beat % 4 === 0 ? clickGain * 1.22 : clickGain, now + 0.008);
+      gain.gain.exponentialRampToValueAtTime(isSam ? clickGain * 1.28 : isKhali ? clickGain * 0.42 : clickGain, now + 0.008);
       gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
       oscillator.connect(gain);
       gain.connect(context.destination);
@@ -1428,14 +1472,12 @@ function App({ user, onSignOut }) {
         </div>
         <nav className="nav">
           <button className={`nav-item ${activePage === 'practice' ? 'active' : ''}`} onClick={() => setActivePage('practice')}><Compass size={17} /> Practice</button>
-          <button className="nav-item"><Library size={17} /> Library</button>
           <button className={`nav-item ${activePage === 'raga-dna' ? 'active' : ''}`} onClick={() => setActivePage('raga-dna')}><Search size={17} /> RagaDNA</button>
           <button className={`nav-item ${activePage === 'shruthi' ? 'active' : ''}`} onClick={() => setActivePage('shruthi')}><Wind size={17} /> Shruthi</button>
           <button className={`nav-item ${activePage === 'chords' ? 'active' : ''}`} onClick={() => setActivePage('chords')}><Wand2 size={17} /> Chord Analyser</button>
           <button className={`nav-item ${activePage === 'karnatik' ? 'active' : ''}`} onClick={() => setActivePage('karnatik')}><BookOpen size={17} /> Karnatik Ragas</button>
           <button className={`nav-item ${activePage === 'quiz' ? 'active' : ''}`} onClick={() => setActivePage('quiz')}><ClipboardList size={17} /> Quiz</button>
           <button className={`nav-item ${activePage === 'ear-training' ? 'active' : ''}`} onClick={() => setActivePage('ear-training')}><Music2 size={17} /> Ear Training</button>
-          <button className={`nav-item ${activePage === 'concerts' ? 'active' : ''}`} onClick={() => setActivePage('concerts')}><CalendarDays size={17} /> Concerts</button>
         </nav>
         <div className="top-actions">
           <span className="signed-in-user"><UserCircle2 size={18} /> {user?.email || 'Beta user'}</span>
@@ -1498,6 +1540,11 @@ function App({ user, onSignOut }) {
             setMetronomeVolume={setMetronomeVolume}
             toggleMetronome={toggleMetronome}
             stopMetronome={stopMetronome}
+            practiceSystem={practiceSystem}
+            setPracticeSystem={setPracticeSystem}
+            talaId={talaId}
+            setTalaId={setTalaId}
+            activeTala={activeTala}
           />
         ) : activePage === 'karnatik' ? (
           <KarnatikRagasPage />
@@ -1507,8 +1554,6 @@ function App({ user, onSignOut }) {
           <RagaQuizPage pitch={pitch} />
         ) : activePage === 'ear-training' ? (
           <EarTrainingPage pitch={pitch} />
-        ) : activePage === 'concerts' ? (
-          <ConcertsPage />
         ) : (
           <section className="raga-pane">
             <div className="raga-header">
@@ -1727,15 +1772,38 @@ function ShruthiPage({
   metronomeVolume,
   setMetronomeVolume,
   toggleMetronome,
-  stopMetronome
+  stopMetronome,
+  practiceSystem,
+  setPracticeSystem,
+  talaId,
+  setTalaId,
+  activeTala
 }) {
+  const talaOptions = talaPresets[practiceSystem] || talaPresets.karnatik;
+
   return (
     <section className="raga-pane shruthi-page">
       <div className="raga-header">
         <div>
           <h1>Shruthi Studio</h1>
-          <p>Tanpura drone and pitch-aligned metronome for focused practice.</p>
+          <p>Tanpura drone and pitch-aligned metronome for Karnatik and Hindustani practice.</p>
         </div>
+      </div>
+
+      <div className="practice-orientation">
+        {practiceSystems.map((item) => (
+          <button
+            key={item.id}
+            className={practiceSystem === item.id ? 'active' : ''}
+            onClick={() => {
+              setPracticeSystem(item.id);
+              setTalaId(talaPresets[item.id][0].id);
+            }}
+          >
+            <strong>{item.label}</strong>
+            <span>{item.hint}</span>
+          </button>
+        ))}
       </div>
 
       <div className="shruthi-layout">
@@ -1799,8 +1867,29 @@ function ShruthiPage({
               <strong>{tempo}</strong>
               <small>BPM</small>
             </div>
+            <div className="tala-panel">
+              <label className="select-label">Tala / Cycle
+                <select value={talaId} onChange={(event) => setTalaId(event.target.value)}>
+                  {talaOptions.map((tala) => (
+                    <option key={tala.id} value={tala.id}>{tala.name}</option>
+                  ))}
+                </select>
+              </label>
+              <div className="tala-meter-detail">
+                <span>{practiceSystem === 'karnatik' ? 'Karnatik tala' : 'Hindustani taal'}</span>
+                <strong>{activeTala.meter}</strong>
+                <small>{activeTala.beats} beat cycle mapped for metronome practice</small>
+              </div>
+            </div>
             <div className="beat-meter large" aria-label="Metronome beat">
-              {[1, 2, 3, 4].map((beat) => <span key={beat} className={beatCount === beat ? 'active' : ''}>{beat}</span>)}
+              {Array.from({ length: activeTala.beats }, (_, index) => index + 1).map((beat) => (
+                <span
+                  key={beat}
+                  className={`${beatCount === beat ? 'active' : ''} ${beat === 1 ? 'sam' : ''} ${activeTala.khali?.includes(beat) ? 'khali' : ''}`}
+                >
+                  {beat}
+                </span>
+              ))}
             </div>
             <label className="tempo-control">Tempo
               <button onClick={() => setTempoClamped(tempo - 1)}>-</button>
@@ -2974,10 +3063,29 @@ function buildSampleRecognitionChallenge(samples, excludeId = '') {
   };
 }
 
+function stopRecordedPlayback() {
+  const current = recordedPlaybackController.current;
+  if (!current) return;
+  current.pause();
+  current.currentTime = 0;
+  recordedPlaybackController.current = null;
+}
+
 function playRecordedSample(sample) {
   if (!sample?.src) return;
+  if (recordedPlaybackController.current?.dataset?.sampleId === sample.id) {
+    stopRecordedPlayback();
+    return;
+  }
+  stopRecordedPlayback();
+  stopSwaraPlayback();
   const audio = new Audio(sample.src);
+  audio.dataset.sampleId = sample.id;
   audio.volume = 0.92;
+  recordedPlaybackController.current = audio;
+  audio.addEventListener('ended', () => {
+    if (recordedPlaybackController.current === audio) recordedPlaybackController.current = null;
+  }, { once: true });
   audio.play().catch(() => {});
 }
 
@@ -3005,8 +3113,7 @@ function ragaStudyLineageDetail(raga) {
 }
 
 function playRagaScaleReview(raga, root) {
-  playSwaraLine(raga.arohana, root);
-  window.setTimeout(() => playSwaraLine(raga.avarohana, root), (raga.arohana.length * 0.42 + 0.5) * 1000);
+  playSwaraLine([...raga.arohana, '|', ...raga.avarohana], root, `review-${raga.id}-${root}`);
 }
 
 function nearestTamburaSample(note, mode = 'sa-pa') {
@@ -3217,6 +3324,11 @@ function volumeToGain(volume) {
 
 function metronomeVolumeToGain(volume) {
   return (Number(volume) / 100) * 0.34;
+}
+
+function getActiveTala(systemId, talaId) {
+  const options = talaPresets[systemId] || talaPresets.karnatik;
+  return options.find((tala) => tala.id === talaId) || options[0];
 }
 
 function frequencyToNote(frequency) {
@@ -4154,9 +4266,37 @@ function swaraFrequency(swara, root, octave = 4) {
   return noteToFrequency(note, octave + octaveOffset);
 }
 
-function playSwaraLine(line, root) {
+function stopSwaraPlayback() {
+  const current = swaraPlaybackController.current;
+  if (!current) return;
+  current.timers?.forEach((timer) => window.clearTimeout(timer));
+  current.sources?.forEach((source) => {
+    try {
+      source.stop(0);
+    } catch {
+      // The note may already have finished naturally.
+    }
+  });
+  try {
+    current.master?.disconnect();
+  } catch {
+    // Master may already be disconnected while closing the context.
+  }
+  if (current.context?.state !== 'closed') {
+    current.context.close().catch(() => {});
+  }
+  swaraPlaybackController.current = null;
+}
+
+function playSwaraLine(line, root, playbackKey = `${root}-${line.join('-')}`) {
+  if (swaraPlaybackController.current?.key === playbackKey) {
+    stopSwaraPlayback();
+    return false;
+  }
+  stopSwaraPlayback();
+  stopRecordedPlayback();
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-  if (!AudioContextClass) return;
+  if (!AudioContextClass) return false;
   const context = new AudioContextClass();
   context.resume();
   const master = context.createGain();
@@ -4164,13 +4304,20 @@ function playSwaraLine(line, root) {
   master.connect(context.destination);
   const now = context.currentTime + 0.04;
   const step = 0.42;
+  const player = { key: playbackKey, context, master, sources: [], timers: [] };
+  swaraPlaybackController.current = player;
+  let noteIndex = 0;
 
-  line.forEach((swara, index) => {
+  line.forEach((swara) => {
+    if (swara === '|') {
+      noteIndex += 1;
+      return;
+    }
     const frequency = swaraFrequency(swara, root);
     if (!frequency) return;
     const oscillator = context.createOscillator();
     const gain = context.createGain();
-    const start = now + index * step;
+    const start = now + noteIndex * step;
     oscillator.type = 'sine';
     oscillator.frequency.value = frequency;
     gain.gain.setValueAtTime(0.0001, start);
@@ -4180,31 +4327,19 @@ function playSwaraLine(line, root) {
     gain.connect(master);
     oscillator.start(start);
     oscillator.stop(start + step * 0.9);
+    player.sources.push(oscillator);
+    noteIndex += 1;
   });
 
-  window.setTimeout(() => context.close(), (line.length * step + 0.6) * 1000);
+  const cleanupTimer = window.setTimeout(() => {
+    if (swaraPlaybackController.current === player) stopSwaraPlayback();
+  }, (noteIndex * step + 0.6) * 1000);
+  player.timers.push(cleanupTimer);
+  return true;
 }
 
 function playSingleSwara(swara, root) {
-  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-  if (!AudioContextClass) return;
-  const frequency = swaraFrequency(swara, root);
-  if (!frequency) return;
-  const context = new AudioContextClass();
-  context.resume();
-  const oscillator = context.createOscillator();
-  const gain = context.createGain();
-  const now = context.currentTime + 0.02;
-  oscillator.type = 'sine';
-  oscillator.frequency.value = frequency;
-  gain.gain.setValueAtTime(0.0001, now);
-  gain.gain.exponentialRampToValueAtTime(0.2, now + 0.025);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.55);
-  oscillator.connect(gain);
-  gain.connect(context.destination);
-  oscillator.start(now);
-  oscillator.stop(now + 0.58);
-  window.setTimeout(() => context.close(), 720);
+  playSwaraLine([swara], root, `single-${root}-${swara}`);
 }
 
 function getHarmony(raga, root) {

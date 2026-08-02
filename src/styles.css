@@ -3696,6 +3696,45 @@ input[type="range"] {
   align-items: start;
 }
 
+.practice-orientation {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.practice-orientation button {
+  min-height: 86px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 253, 247, 0.78);
+  color: var(--ink);
+  text-align: left;
+  padding: 16px;
+  cursor: pointer;
+  display: grid;
+  gap: 6px;
+}
+
+.practice-orientation button.active {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: white;
+}
+
+.practice-orientation strong {
+  font-size: 20px;
+}
+
+.practice-orientation span {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.practice-orientation button.active span {
+  color: rgba(255, 255, 255, 0.78);
+}
+
 .shruthi-tool-card {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -3749,6 +3788,7 @@ input[type="range"] {
 
 .beat-meter.large {
   justify-content: center;
+  flex-wrap: wrap;
 }
 
 .beat-meter.large span {
@@ -3763,6 +3803,44 @@ input[type="range"] {
   background: var(--teal);
   color: white;
   box-shadow: 0 0 0 6px rgba(7, 91, 97, 0.12);
+}
+
+.beat-meter.large span.sam {
+  border-color: var(--teal);
+}
+
+.beat-meter.large span.khali {
+  border-style: dashed;
+  color: var(--muted);
+}
+
+.tala-panel {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.tala-meter-detail {
+  border: 1px solid rgba(7, 91, 97, 0.18);
+  border-radius: 8px;
+  background: rgba(223, 236, 235, 0.42);
+  padding: 12px;
+  display: grid;
+  gap: 4px;
+}
+
+.tala-meter-detail span,
+.tala-meter-detail small {
+  color: var(--muted);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tala-meter-detail strong {
+  color: var(--teal-dark);
+  font-size: 20px;
 }
 
 .shruthi-tool-card .tempo-control,
