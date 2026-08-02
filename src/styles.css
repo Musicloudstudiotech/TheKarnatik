@@ -3878,7 +3878,128 @@ input[type="range"] {
 
 .tala-meter-detail strong {
   color: var(--teal-dark);
-  font-size: 20px;
+  font-size: 28px;
+}
+
+.tala-notation {
+  border-top: 1px solid rgba(7, 91, 97, 0.16);
+  border-bottom: 1px solid rgba(7, 91, 97, 0.16);
+  padding: 16px 0;
+  display: grid;
+  gap: 12px;
+}
+
+.tala-notation-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.tala-notation-heading span {
+  color: var(--teal-dark);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tala-notation-heading small {
+  color: var(--muted);
+  text-align: right;
+}
+
+.bol-cycle {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(58px, 1fr));
+  gap: 6px;
+}
+
+.bol-cycle.dense {
+  grid-template-columns: repeat(8, minmax(48px, 1fr));
+}
+
+.bol-beat {
+  min-width: 0;
+  min-height: 68px;
+  border: 1px solid rgba(7, 91, 97, 0.18);
+  background: rgba(255, 253, 247, 0.76);
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 3px;
+  padding: 7px 4px;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.bol-beat span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.bol-beat strong {
+  min-width: 0;
+  color: var(--teal-dark);
+  font-size: 14px;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+.bol-beat.accent {
+  border-top: 4px solid rgba(7, 91, 97, 0.68);
+}
+
+.bol-beat.sam {
+  border-top-color: var(--teal);
+  background: rgba(223, 236, 235, 0.82);
+}
+
+.bol-beat.khali {
+  border-style: dashed;
+  background: rgba(242, 239, 230, 0.72);
+}
+
+.bol-beat.active {
+  border-color: var(--teal);
+  background: var(--teal);
+  box-shadow: 0 0 0 4px rgba(7, 91, 97, 0.11);
+}
+
+.bol-beat.active span,
+.bol-beat.active strong {
+  color: white;
+}
+
+.tala-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.tala-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tala-legend i {
+  width: 15px;
+  height: 8px;
+  border-top: 3px solid rgba(7, 91, 97, 0.68);
+}
+
+.tala-legend .sam-key {
+  border-top-color: var(--teal);
+  background: rgba(223, 236, 235, 0.82);
+}
+
+.tala-legend .khali-key {
+  border-top-style: dashed;
+  border-top-color: var(--muted);
 }
 
 .shruthi-tool-card .tempo-control,
@@ -4133,6 +4254,24 @@ input[type="range"] {
 
   .raga-pane {
     padding: 22px 18px;
+  }
+
+  .tala-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .tala-notation-heading {
+    display: grid;
+    gap: 4px;
+  }
+
+  .tala-notation-heading small {
+    text-align: left;
+  }
+
+  .bol-cycle,
+  .bol-cycle.dense {
+    grid-template-columns: repeat(4, minmax(54px, 1fr));
   }
 
   .raga-header, .content-split, .scale-grid, .facts-row, .practice-grid, .tanpura-body, .shruthi-layout, .lineage-grid, .legend-grid, .catalogue-status, .janya-catalogue, .chakra-grid, .branch-grid, .quiz-score, .quiz-grid, .exercise-topline, .exercise-options, .ear-levels, .ear-workspace, .database-strip, .recognition-options, .concert-search-panel, .concert-submit-panel, .concert-source-row, .concert-grid, .chord-control-panel, .chord-tool-grid, .manual-chord-checker, .ragadna-debug-layout, .ragadna-strength-grid {

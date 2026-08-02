@@ -159,19 +159,113 @@ const practiceSystems = [
 
 const talaPresets = {
   karnatik: [
-    { id: 'adi', name: 'Adi Tala', beats: 8, meter: '8 beat / 4+2+2', accents: [1, 5, 7] },
-    { id: 'rupaka', name: 'Rupaka Tala', beats: 3, meter: '3 beat / 1+2', accents: [1, 2] },
-    { id: 'misra-chapu', name: 'Misra Chapu', beats: 7, meter: '7 beat / 3+2+2', accents: [1, 4, 6] },
-    { id: 'khanda-chapu', name: 'Khanda Chapu', beats: 5, meter: '5 beat / 2+3', accents: [1, 3] },
-    { id: 'tisra-triputa', name: 'Tisra Triputa', beats: 7, meter: '7 beat / 3+2+2', accents: [1, 4, 6] }
+    {
+      id: 'adi',
+      name: 'Adi Tala',
+      beats: 8,
+      meter: '4 + 2 + 2',
+      timeSignature: '8/8',
+      accents: [1, 5, 7],
+      bols: ['Tha', 'Ka', 'Dhi', 'Mi', 'Tha', 'Ka', 'Dhi', 'Mi']
+    },
+    {
+      id: 'rupaka',
+      name: 'Rupaka Tala',
+      beats: 3,
+      meter: '1 + 2',
+      timeSignature: '3/4',
+      accents: [1, 2],
+      bols: ['Tha', 'Ki', 'Ta']
+    },
+    {
+      id: 'misra-chapu',
+      name: 'Misra Chapu',
+      beats: 7,
+      meter: '3 + 2 + 2',
+      timeSignature: '7/8',
+      accents: [1, 4, 6],
+      bols: ['Tha', 'Ki', 'Ta', 'Tha', 'Ka', 'Dhi', 'Mi']
+    },
+    {
+      id: 'khanda-chapu',
+      name: 'Khanda Chapu',
+      beats: 5,
+      meter: '2 + 3',
+      timeSignature: '5/8',
+      accents: [1, 3],
+      bols: ['Tha', 'Ka', 'Tha', 'Ki', 'Ta']
+    },
+    {
+      id: 'tisra-triputa',
+      name: 'Tisra Triputa',
+      beats: 7,
+      meter: '3 + 2 + 2',
+      timeSignature: '7/8',
+      accents: [1, 4, 6],
+      bols: ['Tha', 'Ki', 'Ta', 'Tha', 'Ka', 'Dhi', 'Mi']
+    }
   ],
   hindustani: [
-    { id: 'teentaal', name: 'Teentaal', beats: 16, meter: '16 beat / 4+4+4+4', accents: [1, 5, 13], khali: [9] },
-    { id: 'ektaal', name: 'Ektaal', beats: 12, meter: '12 beat / 2+2+2+2+2+2', accents: [1, 5, 9, 11], khali: [3, 7] },
-    { id: 'jhaptaal', name: 'Jhaptaal', beats: 10, meter: '10 beat / 2+3+2+3', accents: [1, 3, 8], khali: [6] },
-    { id: 'rupak', name: 'Rupak', beats: 7, meter: '7 beat / 3+2+2', accents: [4, 6], khali: [1] },
-    { id: 'dadra', name: 'Dadra', beats: 6, meter: '6 beat / 3+3', accents: [1], khali: [4] },
-    { id: 'keherwa', name: 'Keherwa', beats: 8, meter: '8 beat / 4+4', accents: [1], khali: [5] }
+    {
+      id: 'teentaal',
+      name: 'Teentaal',
+      beats: 16,
+      meter: '4 + 4 + 4 + 4',
+      timeSignature: '16/4',
+      accents: [1, 5, 13],
+      khali: [9],
+      bols: ['Dha', 'Dhin', 'Dhin', 'Dha', 'Dha', 'Dhin', 'Dhin', 'Dha', 'Dha', 'Tin', 'Tin', 'Ta', 'Ta', 'Dhin', 'Dhin', 'Dha']
+    },
+    {
+      id: 'ektaal',
+      name: 'Ektaal',
+      beats: 12,
+      meter: '2 + 2 + 2 + 2 + 2 + 2',
+      timeSignature: '12/4',
+      accents: [1, 5, 9, 11],
+      khali: [3, 7],
+      bols: ['Dhin', 'Dhin', 'DhaGe', 'TiRaKiTa', 'Tu', 'Na', 'Kat', 'Ta', 'DhaGe', 'TiRaKiTa', 'Dhin', 'Na']
+    },
+    {
+      id: 'jhaptaal',
+      name: 'Jhaptaal',
+      beats: 10,
+      meter: '2 + 3 + 2 + 3',
+      timeSignature: '10/4',
+      accents: [1, 3, 8],
+      khali: [6],
+      bols: ['Dhi', 'Na', 'Dhi', 'Dhi', 'Na', 'Ti', 'Na', 'Dhi', 'Dhi', 'Na']
+    },
+    {
+      id: 'rupak',
+      name: 'Rupak',
+      beats: 7,
+      meter: '3 + 2 + 2',
+      timeSignature: '7/4',
+      accents: [4, 6],
+      khali: [1],
+      bols: ['Tin', 'Tin', 'Na', 'Dhin', 'Na', 'Dhin', 'Na']
+    },
+    {
+      id: 'dadra',
+      name: 'Dadra',
+      beats: 6,
+      meter: '3 + 3',
+      timeSignature: '6/8',
+      accents: [1],
+      khali: [4],
+      bols: ['Dha', 'Dhi', 'Na', 'Dha', 'Tu', 'Na']
+    },
+    {
+      id: 'keherwa',
+      name: 'Keherwa',
+      beats: 8,
+      meter: '4 + 4',
+      timeSignature: '4/4',
+      accents: [1],
+      khali: [5],
+      bols: ['Dha', 'Ge', 'Na', 'Ti', 'Na', 'Ka', 'Dhi', 'Na']
+    }
   ]
 };
 
@@ -1500,7 +1594,7 @@ function App({ user, onSignOut }) {
         <nav className="nav">
           <button className={`nav-item ${activePage === 'practice' ? 'active' : ''}`} onClick={() => setActivePage('practice')}><Compass size={17} /> Practice</button>
           <button className={`nav-item ${activePage === 'raga-dna' ? 'active' : ''}`} onClick={() => setActivePage('raga-dna')}><Search size={17} /> RagaDNA</button>
-          <button className={`nav-item ${activePage === 'shruthi' ? 'active' : ''}`} onClick={() => setActivePage('shruthi')}><Wind size={17} /> Shruthi</button>
+          <button className={`nav-item ${activePage === 'shruthi' ? 'active' : ''}`} onClick={() => setActivePage('shruthi')}><Wind size={17} /> Shruthi &amp; Tala</button>
           <button className={`nav-item ${activePage === 'chords' ? 'active' : ''}`} onClick={() => setActivePage('chords')}><Wand2 size={17} /> Chord Analyser</button>
           <button className={`nav-item ${activePage === 'karnatik' ? 'active' : ''}`} onClick={() => setActivePage('karnatik')}><BookOpen size={17} /> Karnatik Ragas</button>
           <button className={`nav-item ${activePage === 'quiz' ? 'active' : ''}`} onClick={() => setActivePage('quiz')}><ClipboardList size={17} /> Quiz</button>
@@ -1812,8 +1906,8 @@ function ShruthiPage({
     <section className="raga-pane shruthi-page">
       <div className="raga-header">
         <div>
-          <h1>Shruthi Studio</h1>
-          <p>Tanpura drone and pitch-aligned metronome for Karnatik and Hindustani practice.</p>
+          <h1>Shruthi &amp; Tala</h1>
+          <p>Tanpura drone, tala bols, and pitch-aligned rhythm for Karnatik and Hindustani practice.</p>
         </div>
       </div>
 
@@ -1879,8 +1973,8 @@ function ShruthiPage({
         <section className="shruthi-tool-card">
           <div className="section-heading">
             <div>
-              <h2>Metronome</h2>
-              <p>Click is tuned to the selected Sa and Pa so rhythm does not fight the shruthi.</p>
+              <h2>Tala / Taal</h2>
+              <p>Follow the active bol while the pitch-aligned click keeps the selected cycle.</p>
             </div>
             <button className="notation-button" onClick={toggleMetronome}>
               {metronomeOn ? <Pause size={16} /> : <Play size={16} />}
@@ -1895,7 +1989,7 @@ function ShruthiPage({
               <small>BPM</small>
             </div>
             <div className="tala-panel">
-              <label className="select-label">Tala / Cycle
+              <label className="select-label">Tala / Taal
                 <select value={talaId} onChange={(event) => setTalaId(event.target.value)}>
                   {talaOptions.map((tala) => (
                     <option key={tala.id} value={tala.id}>{tala.name}</option>
@@ -1903,9 +1997,34 @@ function ShruthiPage({
                 </select>
               </label>
               <div className="tala-meter-detail">
-                <span>{practiceSystem === 'karnatik' ? 'Karnatik tala' : 'Hindustani taal'}</span>
-                <strong>{activeTala.meter}</strong>
-                <small>{activeTala.beats} beat cycle mapped for metronome practice</small>
+                <span>Time Signature</span>
+                <strong>{activeTala.timeSignature}</strong>
+                <small>{activeTala.beats} beats · {activeTala.meter}</small>
+              </div>
+            </div>
+            <div className="tala-notation" aria-live="polite">
+              <div className="tala-notation-heading">
+                <span>{practiceSystem === 'karnatik' ? 'Sollukattu' : 'Tabla Bols'}</span>
+                <small>Western time signature is a practice mapping; the tala cycle remains primary.</small>
+              </div>
+              <div className={`bol-cycle ${activeTala.beats > 12 ? 'dense' : ''}`}>
+                {activeTala.bols.map((bol, index) => {
+                  const beat = index + 1;
+                  return (
+                    <div
+                      key={`${activeTala.id}-${beat}`}
+                      className={`bol-beat ${beatCount === beat ? 'active' : ''} ${beat === 1 ? 'sam' : ''} ${activeTala.accents.includes(beat) ? 'accent' : ''} ${activeTala.khali?.includes(beat) ? 'khali' : ''}`}
+                    >
+                      <span>{beat}</span>
+                      <strong>{bol}</strong>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="tala-legend">
+                <span><i className="sam-key"></i> Sam</span>
+                <span><i className="accent-key"></i> Vibhag / Anga</span>
+                {activeTala.khali?.length ? <span><i className="khali-key"></i> Khali</span> : null}
               </div>
             </div>
             <div className="beat-meter large" aria-label="Metronome beat">
