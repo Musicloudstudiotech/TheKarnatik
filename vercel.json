@@ -5,6 +5,8 @@
   "buildCommand": "pnpm build",
   "outputDirectory": "dist",
   "rewrites": [
+    { "source": "/app", "destination": "/index.html" },
+    { "source": "/app/:path*", "destination": "/index.html" },
     { "source": "/Kanban", "destination": "/index.html" },
     { "source": "/kanban", "destination": "/index.html" }
   ]
