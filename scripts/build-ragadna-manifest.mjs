@@ -68,9 +68,9 @@ const manifest = {
   generatedAt: new Date().toISOString(),
   rootDir: path.relative(process.cwd(), rootDir),
   policy: {
-    shyam: 'baseline-training',
+    referenceSetA: 'baseline-training',
     otherVoices: 'test-first-training-allowed',
-    guidance: 'Use Shyam as the first trusted baseline. Keep other voices as test until reviewed, but preserve trainingAllowed when consent is given.'
+    guidance: 'Use the curated reference set as the first training baseline. Keep evaluation recordings as test data until reviewed.'
   },
   summary: summarize(entries),
   entries
@@ -158,12 +158,12 @@ function classifySource(filePath) {
   const normalizedPath = filePath.split(path.sep).join('/');
   if (normalizedPath.includes('/Shyam/')) {
     return {
-      id: 'shyam',
-      performer: 'Shyam',
+      id: 'reference-a',
+      performer: 'anonymous',
       voiceType: 'male',
-      sourceSet: 'shyam-20-baseline',
+      sourceSet: 'reference-set-a',
       split: 'training',
-      notes: 'First trusted 20-raga voice baseline.'
+      notes: 'Curated 20-raga voice reference set.'
     };
   }
   if (normalizedPath.includes('/Test Ragas/')) {

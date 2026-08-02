@@ -1112,13 +1112,13 @@
       "frameCount": 293
     },
     {
-      "id": "shyam__abheri__c__shyam-abheri-c",
+      "id": "reference-a__abheri__c",
       "raga": "Abheri",
       "canonicalRaga": "abheri_bhimpalasi",
       "ragaId": "abheri_bhimpalasi",
       "key": "C#",
       "split": "training",
-      "sourceSet": "shyam-20-baseline",
+      "sourceSet": "reference-set-a",
       "swaraIntervals": [
         0,
         2,
@@ -1168,13 +1168,13 @@
       "frameCount": 278
     },
     {
-      "id": "shyam__anandabhairavi__c__shyam-anandabhairavi-c",
+      "id": "reference-a__anandabhairavi__c",
       "raga": "Anandabhairavi",
       "canonicalRaga": "anandabhairavi",
       "ragaId": null,
       "key": "C#",
       "split": "training",
-      "sourceSet": "shyam-20-baseline",
+      "sourceSet": "reference-set-a",
       "swaraIntervals": [
         0,
         2,
@@ -1230,13 +1230,13 @@
       "frameCount": 319
     },
     {
-      "id": "shyam__bhairavi__c__shyam-bhairavi-c",
+      "id": "reference-a__bhairavi__c",
       "raga": "Bhairavi",
       "canonicalRaga": "bhairavi",
       "ragaId": null,
       "key": "C#",
       "split": "training",
-      "sourceSet": "shyam-20-baseline",
+      "sourceSet": "reference-set-a",
       "swaraIntervals": [
         0,
         2,
@@ -1290,13 +1290,13 @@
       "frameCount": 313
     },
     {
-      "id": "shyam__bilahari__c__shyam-bilahari-c",
+      "id": "reference-a__bilahari__c",
       "raga": "Bilahari",
       "canonicalRaga": "bilahari",
       "ragaId": null,
       "key": "C#",
       "split": "training",
-      "sourceSet": "shyam-20-baseline",
+      "sourceSet": "reference-set-a",
       "swaraIntervals": [
         0,
         2,
@@ -1353,13 +1353,13 @@
       "frameCount": 232
     },
     {
-      "id": "shyam__charukeshi__c__shyam-charukeshi-c",
+      "id": "reference-a__charukeshi__c",
       "raga": "Charukeshi",
       "canonicalRaga": "charukesi",
       "ragaId": "charukesi",
       "key": "C#",
       "split": "training",
-      "sourceSet": "shyam-20-baseline",
+      "sourceSet": "reference-set-a",
       "swaraIntervals": [
         0,
         2,
@@ -1426,13 +1426,13 @@
       "frameCount": 305
     },
     {
-      "id": "shyam__hamsadhwani__c__shyam-hamsadhwani-c",
+      "id": "reference-a__hamsadhwani__c",
       "raga": "Hamsadhwani",
       "canonicalRaga": "hamsadhwani",
       "ragaId": "hamsadhwani",
       "key": "C#",
       "split": "training",
-      "sourceSet": "shyam-20-baseline",
+      "sourceSet": "reference-set-a",
       "swaraIntervals": [
         0,
         2,
@@ -1497,13 +1497,13 @@
       "frameCount": 343
     },
     {
-      "id": "shyam__hindolam__c__shyam-hindolam-c",
+      "id": "reference-a__hindolam__c",
       "raga": "Hindolam",
       "canonicalRaga": "hindolam_malkauns",
       "ragaId": "hindolam_malkauns",
       "key": "C#",
       "split": "training",
-      "sourceSet": "shyam-20-baseline",
+      "sourceSet": "reference-set-a",
       "swaraIntervals": [
         0,
         3,
@@ -1551,13 +1551,13 @@
       "frameCount": 299
     },
     {
-      "id": "shyam__kalyani__c__shyam-kalyani-c",
+      "id": "reference-a__kalyani__c",
       "raga": "Kalyani",
       "canonicalRaga": "kalyani",
       "ragaId": "kalyani",
       "key": "C#",
       "split": "training",
-      "sourceSet": "shyam-20-baseline",
+      "sourceSet": "reference-set-a",
       "swaraIntervals": [
         0,
         2,
@@ -1663,13 +1663,13 @@
       "frameCount": 784
     },
     {
-      "id": "shyam__kambhoji__c__shyam-kambhoji-c",
+      "id": "reference-a__kambhoji__c",
       "raga": "Kambhoji",
       "canonicalRaga": "kambhoji",
       "ragaId": "kambhoji",
       "key": "C#",
       "split": "training",
-      "sourceSet": "shyam-20-baseline",
+      "sourceSet": "reference-set-a",
       "swaraIntervals": [
         0,
         4,
@@ -1737,13 +1737,13 @@
       "frameCount": 394
     },
     {
-      "id": "shyam__kedaragowla__c__shyam-kedaragowla-c",
+      "id": "reference-a__kedaragowla__c",
       "raga": "Kedaragowla",
       "canonicalRaga": "kedaragowla",
       "ragaId": null,
       "key": "C#",
       "split": "training",
-      "sourceSet": "shyam-20-baseline",
+      "sourceSet": "reference-set-a",
       "swaraIntervals": [
         0,
         2,
@@ -1815,13 +1815,13 @@
       "frameCount": 352
     },
     {
-      "id": "shyam__keeravani__c__shyam-keeravani-c",
+      "id": "reference-a__keeravani__c",
       "raga": "Keeravani",
       "canonicalRaga": "keeravani_kirwani",
       "ragaId": "keeravani_kirwani",
       "key": "C#",
       "split": "training",
-      "sourceSet": "shyam-20-baseline",
+      "sourceSet": "reference-set-a",
       "swaraIntervals": [
         0,
         2,
@@ -1879,13 +1879,13 @@
       "frameCount": 351
     },
     {
-      "id": "shyam__kharaharapriya__c__shyam-kharaharapriya-c",
+      "id": "reference-a__kharaharapriya__c",
       "raga": "Kharaharapriya",
       "canonicalRaga": "kharaharapriya_kafi",
       "ragaId": "kharaharapriya_kafi",
       "key": "C#",
       "split": "training",
-      "sourceSet": "shyam-20-baseline",
+      "sourceSet": "reference-set-a",
       "swaraIntervals": [
         0,
         2,
@@ -1936,13 +1936,13 @@
       "frameCount": 269
     },
     {
-      "id": "shyam__madhyamavati__c__shyam-madhyamavati-c",
+      "id": "reference-a__madhyamavati__c",
       "raga": "Madhyamavati",
       "canonicalRaga": "madhyamavati",
       "ragaId": null,
       "key": "C#",
       "split": "training",
-      "sourceSet": "shyam-20-baseline",
+      "sourceSet": "reference-set-a",
       "swaraIntervals": [
         0,
         2,
@@ -1995,13 +1995,13 @@
       "frameCount": 230
     },
     {
-      "id": "shyam__mayamalavagowla__c__shyam-mayamalavagowla-c",
+      "id": "reference-a__mayamalavagowla__c",
       "raga": "Mayamalavagowla",
       "canonicalRaga": "mayamalavagowla",
       "ragaId": "mayamalavagowla",
       "key": "C#",
       "split": "training",
-      "sourceSet": "shyam-20-baseline",
+      "sourceSet": "reference-set-a",
       "swaraIntervals": [
         0,
         1,
@@ -2069,13 +2069,13 @@
       "frameCount": 369
     },
     {
-      "id": "shyam__mohana__c__shyam-mohana-c",
+      "id": "reference-a__mohana__c",
       "raga": "Mohana",
       "canonicalRaga": "mohana",
       "ragaId": "mohana",
       "key": "C#",
       "split": "training",
-      "sourceSet": "shyam-20-baseline",
+      "sourceSet": "reference-set-a",
       "swaraIntervals": [
         0,
         2,
@@ -2131,13 +2131,13 @@
       "frameCount": 357
     },
     {
-      "id": "shyam__reetigowla__c__shyam-reetigowla-c",
+      "id": "reference-a__reetigowla__c",
       "raga": "Reetigowla",
       "canonicalRaga": "reetigowla",
       "ragaId": null,
       "key": "C#",
       "split": "training",
-      "sourceSet": "shyam-20-baseline",
+      "sourceSet": "reference-set-a",
       "swaraIntervals": [
         0,
         2,
@@ -2214,13 +2214,13 @@
       "frameCount": 509
     },
     {
-      "id": "shyam__saveri__c__shyam-saveri-c",
+      "id": "reference-a__saveri__c",
       "raga": "Saveri",
       "canonicalRaga": "saveri",
       "ragaId": null,
       "key": "C#",
       "split": "training",
-      "sourceSet": "shyam-20-baseline",
+      "sourceSet": "reference-set-a",
       "swaraIntervals": [
         0,
         1,
@@ -2298,13 +2298,13 @@
       "frameCount": 358
     },
     {
-      "id": "shyam__shankarabharanam__c__shyam-shankarabharanam-c",
+      "id": "reference-a__shankarabharanam__c",
       "raga": "Shankarabharanam",
       "canonicalRaga": "shankarabharanam_bilawal",
       "ragaId": "shankarabharanam_bilawal",
       "key": "C#",
       "split": "training",
-      "sourceSet": "shyam-20-baseline",
+      "sourceSet": "reference-set-a",
       "swaraIntervals": [
         0,
         2,
@@ -2357,13 +2357,13 @@
       "frameCount": 186
     },
     {
-      "id": "shyam__shudda-saveri__c__shyam-shudda-saveri-c",
+      "id": "reference-a__shudda-saveri__c",
       "raga": "Shudda Saveri",
       "canonicalRaga": "shuddha_saveri_durga",
       "ragaId": "shuddha_saveri_durga",
       "key": "C#",
       "split": "training",
-      "sourceSet": "shyam-20-baseline",
+      "sourceSet": "reference-set-a",
       "swaraIntervals": [
         0,
         2,
@@ -2411,13 +2411,13 @@
       "frameCount": 252
     },
     {
-      "id": "shyam__todi__c__shyam-todi-c",
+      "id": "reference-a__todi__c",
       "raga": "Todi",
       "canonicalRaga": "todi",
       "ragaId": "todi",
       "key": "C#",
       "split": "training",
-      "sourceSet": "shyam-20-baseline",
+      "sourceSet": "reference-set-a",
       "swaraIntervals": [
         0,
         1,

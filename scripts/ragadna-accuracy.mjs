@@ -187,19 +187,30 @@ function renderFeatureModel(items) {
     method: 'RagaDNA v0.2 YIN+McLeod pitch contour fingerprint',
     totalClips: items.length,
     features: items.map((item) => ({
-      id: item.id,
+      id: publicFeatureId(item),
       raga: item.raga,
       canonicalRaga: item.canonicalRaga,
       ragaId: item.ragaId,
       key: item.key,
       split: item.split,
-      sourceSet: item.sourceSet,
+      sourceSet: publicSourceSet(item.sourceSet),
       swaraIntervals: item.swaraIntervals,
       path: item.path,
       histogram: item.histogram,
       frameCount: item.frameCount
     }))
   };
+}
+
+function publicSourceSet(sourceSet) {
+  return sourceSet === 'shyam-20-baseline' ? 'reference-set-a' : sourceSet;
+}
+
+function publicFeatureId(item) {
+  if (!['shyam-20-baseline', 'reference-set-a'].includes(item.sourceSet)) return item.id;
+  const raga = normalizeName(item.raga).replace(/\s+/g, '-');
+  const key = String(item.key || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g, '');
+  return `reference-a__${raga}__${key}`;
 }
 
 function evaluateFeature(feature, model) {

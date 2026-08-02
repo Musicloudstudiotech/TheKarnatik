@@ -374,30 +374,30 @@ const concertSourceRoadmap = [
   }
 ];
 
-const shyamRecordedSamples = [
-  { id: 'shyam-abheri', ragaId: 'abheri_bhimpalasi', name: 'Abheri', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Abheri-CSharp.mp3' },
-  { id: 'shyam-anandabhairavi', name: 'Anandabhairavi', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Anandabhairavi-CSharp.mp3' },
-  { id: 'shyam-bhairavi', name: 'Bhairavi', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Bhairavi-CSharp.mp3' },
-  { id: 'shyam-bilahari', name: 'Bilahari', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Bilahari-CSharp.mp3' },
-  { id: 'shyam-charukeshi', ragaId: 'charukesi', name: 'Charukeshi', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Charukeshi-CSharp.mp3' },
-  { id: 'shyam-hamsadhwani', ragaId: 'hamsadhwani', name: 'Hamsadhwani', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Hamsadhwani-CSharp.mp3' },
-  { id: 'shyam-hindolam', ragaId: 'hindolam_malkauns', name: 'Hindolam', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Hindolam-CSharp.mp3' },
-  { id: 'shyam-kalyani', ragaId: 'kalyani', name: 'Kalyani', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Kalyani-CSharp.mp3' },
-  { id: 'shyam-kambhoji', ragaId: 'kambhoji', name: 'Kambhoji', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Kambhoji-CSharp.mp3' },
-  { id: 'shyam-kedaragowla', name: 'Kedaragowla', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Kedaragowla-CSharp.mp3' },
-  { id: 'shyam-keeravani', ragaId: 'keeravani_kirwani', name: 'Keeravani', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Keeravani-CSharp.mp3' },
-  { id: 'shyam-kharaharapriya', ragaId: 'kharaharapriya_kafi', name: 'Kharaharapriya', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Kharaharapriya-CSharp.mp3' },
-  { id: 'shyam-madhyamavati', name: 'Madhyamavati', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Madhyamavati-CSharp.mp3' },
-  { id: 'shyam-mayamalavagowla', ragaId: 'mayamalavagowla', name: 'Mayamalavagowla', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Mayamalavagowla-CSharp.mp3' },
-  { id: 'shyam-mohana', ragaId: 'mohana', name: 'Mohana', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Mohana-CSharp.mp3' },
-  { id: 'shyam-reetigowla', name: 'Reetigowla', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Reetigowla-CSharp.mp3' },
-  { id: 'shyam-saveri', name: 'Saveri', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Saveri-CSharp.mp3' },
-  { id: 'shyam-shankarabharanam', ragaId: 'shankarabharanam_bilawal', name: 'Shankarabharanam', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Shankarabharanam-CSharp.mp3' },
-  { id: 'shyam-shuddha-saveri', ragaId: 'shuddha_saveri_durga', name: 'Shuddha Saveri', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Shudda Saveri-CSharp.mp3' },
-  { id: 'shyam-todi', ragaId: 'todi', name: 'Todi', key: 'C#', singer: 'Shyam', src: '/raga-samples/shyam/Shyam-Todi-CSharp.mp3' }
+const referenceRecordedSamples = [
+  { id: 'reference-abheri', ragaId: 'abheri_bhimpalasi', name: 'Abheri', key: 'C#', src: '/raga-samples/reference-a/Abheri-CSharp.mp3' },
+  { id: 'reference-anandabhairavi', name: 'Anandabhairavi', key: 'C#', src: '/raga-samples/reference-a/Anandabhairavi-CSharp.mp3' },
+  { id: 'reference-bhairavi', name: 'Bhairavi', key: 'C#', src: '/raga-samples/reference-a/Bhairavi-CSharp.mp3' },
+  { id: 'reference-bilahari', name: 'Bilahari', key: 'C#', src: '/raga-samples/reference-a/Bilahari-CSharp.mp3' },
+  { id: 'reference-charukeshi', ragaId: 'charukesi', name: 'Charukeshi', key: 'C#', src: '/raga-samples/reference-a/Charukeshi-CSharp.mp3' },
+  { id: 'reference-hamsadhwani', ragaId: 'hamsadhwani', name: 'Hamsadhwani', key: 'C#', src: '/raga-samples/reference-a/Hamsadhwani-CSharp.mp3' },
+  { id: 'reference-hindolam', ragaId: 'hindolam_malkauns', name: 'Hindolam', key: 'C#', src: '/raga-samples/reference-a/Hindolam-CSharp.mp3' },
+  { id: 'reference-kalyani', ragaId: 'kalyani', name: 'Kalyani', key: 'C#', src: '/raga-samples/reference-a/Kalyani-CSharp.mp3' },
+  { id: 'reference-kambhoji', ragaId: 'kambhoji', name: 'Kambhoji', key: 'C#', src: '/raga-samples/reference-a/Kambhoji-CSharp.mp3' },
+  { id: 'reference-kedaragowla', name: 'Kedaragowla', key: 'C#', src: '/raga-samples/reference-a/Kedaragowla-CSharp.mp3' },
+  { id: 'reference-keeravani', ragaId: 'keeravani_kirwani', name: 'Keeravani', key: 'C#', src: '/raga-samples/reference-a/Keeravani-CSharp.mp3' },
+  { id: 'reference-kharaharapriya', ragaId: 'kharaharapriya_kafi', name: 'Kharaharapriya', key: 'C#', src: '/raga-samples/reference-a/Kharaharapriya-CSharp.mp3' },
+  { id: 'reference-madhyamavati', name: 'Madhyamavati', key: 'C#', src: '/raga-samples/reference-a/Madhyamavati-CSharp.mp3' },
+  { id: 'reference-mayamalavagowla', ragaId: 'mayamalavagowla', name: 'Mayamalavagowla', key: 'C#', src: '/raga-samples/reference-a/Mayamalavagowla-CSharp.mp3' },
+  { id: 'reference-mohana', ragaId: 'mohana', name: 'Mohana', key: 'C#', src: '/raga-samples/reference-a/Mohana-CSharp.mp3' },
+  { id: 'reference-reetigowla', name: 'Reetigowla', key: 'C#', src: '/raga-samples/reference-a/Reetigowla-CSharp.mp3' },
+  { id: 'reference-saveri', name: 'Saveri', key: 'C#', src: '/raga-samples/reference-a/Saveri-CSharp.mp3' },
+  { id: 'reference-shankarabharanam', ragaId: 'shankarabharanam_bilawal', name: 'Shankarabharanam', key: 'C#', src: '/raga-samples/reference-a/Shankarabharanam-CSharp.mp3' },
+  { id: 'reference-shuddha-saveri', ragaId: 'shuddha_saveri_durga', name: 'Shuddha Saveri', key: 'C#', src: '/raga-samples/reference-a/Shudda Saveri-CSharp.mp3' },
+  { id: 'reference-todi', ragaId: 'todi', name: 'Todi', key: 'C#', src: '/raga-samples/reference-a/Todi-CSharp.mp3' }
 ];
 
-const shyamPilotScales = {
+const referencePilotScales = {
   Abheri: {
     arohana: ['S', 'G2', 'M1', 'P', 'N2', "S'"],
     avarohana: ["S'", 'N2', 'D2', 'P', 'M1', 'G2', 'R2', 'S'],
@@ -500,15 +500,15 @@ const shyamPilotScales = {
   }
 };
 
-const shyamPilotRagas = shyamRecordedSamples.map((sample) => {
+const referencePilotRagas = referenceRecordedSamples.map((sample) => {
   const linkedRaga = sample.ragaId ? ragas.find((raga) => raga.id === sample.ragaId) : null;
-  const template = shyamPilotScales[sample.name] || linkedRaga || {};
+  const template = referencePilotScales[sample.name] || linkedRaga || {};
   return {
     id: sample.id,
     ragaId: sample.ragaId,
     name: sample.name,
     system: linkedRaga?.system || 'Karnatik',
-    family: linkedRaga?.family || 'Shyam 20 pilot baseline',
+    family: linkedRaga?.family || '20-raga reference set',
     arohana: template.arohana || [],
     avarohana: template.avarohana || [],
     signatureIntervals: (template.signature || []).map((swara) => swaraIntervals[swara]).filter((interval) => interval !== undefined),
@@ -516,7 +516,7 @@ const shyamPilotRagas = shyamRecordedSamples.map((sample) => {
   };
 });
 
-const allRagaDnaRagas = buildRagaDnaCandidates(ragadnaManifest.entries, shyamPilotRagas);
+const allRagaDnaRagas = buildRagaDnaCandidates(ragadnaManifest.entries, referencePilotRagas);
 const ragaDnaFeatures = ragadnaFeatureModel.features || [];
 const ragaDnaSourceCounts = (ragadnaManifest.entries || []).reduce((acc, entry) => {
   acc[entry.sourceSet] = (acc[entry.sourceSet] || 0) + 1;
@@ -524,9 +524,9 @@ const ragaDnaSourceCounts = (ragadnaManifest.entries || []).reduce((acc, entry) 
 }, {});
 const ragaDnaDatasetLabel = `${ragadnaFeatureModel.totalClips || ragadnaManifest.summary?.total || allRagaDnaRagas.length} RagaDNA samples`;
 const ragaDnaDatasetDetail = [
-  ragaDnaSourceCounts['shyam-20-baseline'] ? `${ragaDnaSourceCounts['shyam-20-baseline']} Shyam baseline` : '',
-  ragaDnaSourceCounts['test-ragas-2026-07-21'] ? `${ragaDnaSourceCounts['test-ragas-2026-07-21']} Test Ragas` : '',
-  ragaDnaSourceCounts['random-raga-aarohanam-avarohanam'] ? `${ragaDnaSourceCounts['random-raga-aarohanam-avarohanam']} Random Raga Sets` : ''
+  ragaDnaSourceCounts['reference-set-a'] ? `${ragaDnaSourceCounts['reference-set-a']} curated references` : '',
+  ragaDnaSourceCounts['test-ragas-2026-07-21'] ? `${ragaDnaSourceCounts['test-ragas-2026-07-21']} evaluation recordings` : '',
+  ragaDnaSourceCounts['random-raga-aarohanam-avarohanam'] ? `${ragaDnaSourceCounts['random-raga-aarohanam-avarohanam']} extended references` : ''
 ].filter(Boolean).join(' + ');
 
 const ragaDnaAnalysisNotes = [
@@ -2148,7 +2148,6 @@ function RagaDnaPage({ ragaDetector, startRagaDetection, selected, pitch }) {
                   <strong>{match.name}</strong>
                   <span>{match.score}% · Path {match.sequenceScore}% · Fingerprint {match.fingerprintScore || 0}%</span>
                   <p>Matched {match.matched.join(' ') || 'none'} · Missing {match.missing.join(' ') || 'none'} · Extra {match.extra.join(' ') || 'none'}</p>
-                  {match.bestSampleId ? <small>Closest sample: {match.bestSampleId}</small> : null}
                   {match.confusionNotes?.length ? <em>{match.confusionNotes.join(' ')}</em> : null}
                 </article>
               ))}
@@ -2995,17 +2994,17 @@ function EarTrainingPage({ pitch }) {
     return Array.from(byName.values());
   }, []);
   const [recognitionChallenge, setRecognitionChallenge] = useState(() => buildRecognitionChallenge([...melakartaRagas, ...ragas].filter((raga) => raga.arohana.length && raga.avarohana.length)));
-  const [sampleChallenge, setSampleChallenge] = useState(() => buildSampleRecognitionChallenge(shyamRecordedSamples));
+  const [sampleChallenge, setSampleChallenge] = useState(() => buildSampleRecognitionChallenge(referenceRecordedSamples));
   const level = earTrainingLevels.find((item) => item.id === activeLevel) || earTrainingLevels[0];
   const recognitionRaga = recognitionPool.find((raga) => raga.id === recognitionChallenge.ragaId) || recognitionPool[0];
   const recognitionLine = recognitionChallenge.direction === 'arohana' ? recognitionRaga.arohana : recognitionRaga.avarohana;
-  const activeSample = shyamRecordedSamples.find((sample) => sample.id === sampleChallenge.sampleId) || shyamRecordedSamples[0];
+  const activeSample = referenceRecordedSamples.find((sample) => sample.id === sampleChallenge.sampleId) || referenceRecordedSamples[0];
   const sampleRaga = recognitionPool.find((raga) => raga.id === activeSample?.ragaId);
 
   function selectLevel(levelId) {
     setActiveLevel(levelId);
     setRecognitionChallenge(buildRecognitionChallenge(recognitionPool));
-    setSampleChallenge(buildSampleRecognitionChallenge(shyamRecordedSamples));
+    setSampleChallenge(buildSampleRecognitionChallenge(referenceRecordedSamples));
   }
 
   function playRecognitionChallenge() {
@@ -3018,9 +3017,9 @@ function EarTrainingPage({ pitch }) {
 
   function nextRecognitionChallenge() {
     if (challengeSource === 'recorded') {
-      const nextChallenge = buildSampleRecognitionChallenge(shyamRecordedSamples, sampleChallenge.sampleId);
+      const nextChallenge = buildSampleRecognitionChallenge(referenceRecordedSamples, sampleChallenge.sampleId);
       setSampleChallenge(nextChallenge);
-      const nextSample = shyamRecordedSamples.find((sample) => sample.id === nextChallenge.sampleId);
+      const nextSample = referenceRecordedSamples.find((sample) => sample.id === nextChallenge.sampleId);
       playRecordedSample(nextSample);
       return;
     }
@@ -3077,8 +3076,8 @@ function EarTrainingPage({ pitch }) {
           <aside className="ear-lessons">
             <div className="recognition-set-card">
               <span>Scale Challenge</span>
-              <strong>{challengeSource === 'recorded' ? 'Shyam C# recordings' : 'Synthetic swara scale'}</strong>
-              <p>{challengeSource === 'recorded' ? '20 labeled Arohana/Avarohana voice clips are now the baseline quiz set.' : 'Challenge hides the raga name until the user answers.'}</p>
+              <strong>{challengeSource === 'recorded' ? 'Recorded voice scales' : 'Synthetic swara scale'}</strong>
+              <p>{challengeSource === 'recorded' ? 'Identify ragas from 20 labeled arohana and avarohana recordings.' : 'Challenge hides the raga name until the user answers.'}</p>
               <div className="sample-source-toggle">
                 <button className={challengeSource === 'recorded' ? 'active' : ''} onClick={() => setChallengeSource('recorded')}>Recorded</button>
                 <button className={challengeSource === 'synthetic' ? 'active' : ''} onClick={() => setChallengeSource('synthetic')}>Synthetic</button>
@@ -3089,7 +3088,7 @@ function EarTrainingPage({ pitch }) {
           <section className="ear-drill recognition-drill">
             <div className="ear-drill-head">
               <div>
-                <span>Level 1 · {challengeSource === 'recorded' ? 'Shyam C#' : `${pitch} Sa`}</span>
+                <span>Level 1 · {challengeSource === 'recorded' ? 'Recorded scale' : `${pitch} Sa`}</span>
                 <h2>Identify the Raga</h2>
                 <p>Listen first. Choose the raga from the options.</p>
               </div>
@@ -3102,14 +3101,14 @@ function EarTrainingPage({ pitch }) {
                 ? (sampleChallenge.answered ? activeSample.name : 'Listen and identify')
                 : (recognitionChallenge.answered ? recognitionRaga.name : 'Listen and identify')}</strong>
               <small>{challengeSource === 'recorded'
-                ? (sampleChallenge.answered ? `${activeSample.singer} recording in ${activeSample.key}.` : 'Recorded Arohana/Avarohana sample; raga is hidden until you answer.')
+                ? (sampleChallenge.answered ? `Reference recording in ${activeSample.key}.` : 'Recorded arohana and avarohana; the raga is hidden until you answer.')
                 : (recognitionChallenge.answered ? `${recognitionChallenge.direction} was played.` : 'Challenge hides the raga name until the user answers.')}</small>
             </div>
 
             <div className="recognition-options">
               {(challengeSource === 'recorded' ? sampleChallenge.options : recognitionChallenge.options).map((optionId) => {
                 const option = challengeSource === 'recorded'
-                  ? shyamRecordedSamples.find((sample) => sample.id === optionId)
+                  ? referenceRecordedSamples.find((sample) => sample.id === optionId)
                   : recognitionPool.find((raga) => raga.id === optionId);
                 const answerId = challengeSource === 'recorded' ? sampleChallenge.sampleId : recognitionChallenge.ragaId;
                 const answeredId = challengeSource === 'recorded' ? sampleChallenge.answered : recognitionChallenge.answered;
@@ -3132,13 +3131,13 @@ function EarTrainingPage({ pitch }) {
                   ? `Correct. This is ${challengeSource === 'recorded' ? activeSample.name : recognitionRaga.name}.`
                   : `Incorrect answer. It was ${challengeSource === 'recorded' ? activeSample.name : recognitionRaga.name}.`}</strong>
                 <p className="recognition-detail">{challengeSource === 'recorded'
-                  ? `${activeSample.singer} baseline sample in ${activeSample.key}. ${sampleRaga ? ragaLineageDetail(sampleRaga) : 'Scale metadata is pending in the raga database.'}`
+                  ? `Reference recording in ${activeSample.key}. ${sampleRaga ? ragaLineageDetail(sampleRaga) : 'Scale metadata is pending in the raga database.'}`
                   : ragaLineageDetail(recognitionRaga)}</p>
                 <div className="recognition-scale">
                   <p><b>Arohana</b>{(challengeSource === 'recorded' ? sampleRaga?.arohana : recognitionRaga.arohana)?.join(' ') || 'Pending'}</p>
                   <p><b>Avarohana</b>{(challengeSource === 'recorded' ? sampleRaga?.avarohana : recognitionRaga.avarohana)?.join(' ') || 'Pending'}</p>
                 </div>
-                {challengeSource === 'recorded' && <button onClick={() => playRecordedSample(activeSample)}>Replay Shyam Sample</button>}
+                {challengeSource === 'recorded' && <button onClick={() => playRecordedSample(activeSample)}>Replay Recording</button>}
                 <button onClick={() => sampleRaga ? playRagaScaleReview(sampleRaga, pitch) : playRagaScaleReview(recognitionRaga, pitch)}>Play Arohana & Avarohana</button>
                 <button onClick={nextRecognitionChallenge}>Next Challenge</button>
               </div>
@@ -3201,7 +3200,7 @@ function buildRecognitionChallenge(pool, excludeId = '') {
 }
 
 function buildSampleRecognitionChallenge(samples, excludeId = '') {
-  const usablePool = samples.length ? samples : shyamRecordedSamples;
+  const usablePool = samples.length ? samples : referenceRecordedSamples;
   let answer = usablePool[Math.floor(Math.random() * usablePool.length)];
   if (usablePool.length > 1) {
     while (answer.id === excludeId) {
@@ -4265,7 +4264,7 @@ function applyRagaConfusionRules(matches, heardSet, heardSequence, syllableEvide
           score += 18;
           reasons.push('Mohana skeleton held; no held Ma/Ni.');
         }
-        if (['shyam-bilahari', 'bilahari', 'hamsadhwani', 'shankarabharanam_bilawal'].includes(match.id) || ['bilahari', 'hamsadhwani', 'shankarabharanam'].includes(normalizeRagaSearchText(match.name))) {
+        if (['reference-bilahari', 'bilahari', 'hamsadhwani', 'shankarabharanam_bilawal'].includes(match.id) || ['bilahari', 'hamsadhwani', 'shankarabharanam'].includes(normalizeRagaSearchText(match.name))) {
           score -= match.id === 'hamsadhwani' ? 24 : 18;
           reasons.push('Rejected in Mohana battle: required held Ma/Ni was not present.');
         }
@@ -4288,7 +4287,7 @@ function applyRagaConfusionRules(matches, heardSet, heardSequence, syllableEvide
         reasons.push('Bilahari softened: Ma/Ni were not held strongly enough; Mohana remains possible.');
       }
       if (bilahariAmbiguousShape) {
-        if (match.id === 'bilahari' || match.id === 'shyam-bilahari') {
+        if (match.id === 'bilahari' || match.id === 'reference-bilahari') {
           score += syllableBilahari ? 34 : 24;
           reasons.push(syllableBilahari ? 'Clock 0 heard Bilahari swara syllable path.' : 'Bilahari shape held; upper D/N was captured as ambiguous D3/N2.');
         }
