@@ -176,7 +176,6 @@
   border-left: 1px solid #d9d0c1;
 }
 
-.downloads-google-button,
 .downloads-email-button,
 .download-row > button,
 .downloads-owner-panel > button {
@@ -194,17 +193,33 @@
   cursor: pointer;
 }
 
-.downloads-google-button,
 .downloads-email-button {
   width: 100%;
 }
 
-.downloads-google-button:disabled,
 .downloads-email-button:disabled,
 .download-row > button:disabled,
 .downloads-owner-panel > button:disabled {
   cursor: not-allowed;
   opacity: 0.5;
+}
+
+.downloads-google-button-host {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.downloads-google-status {
+  margin: 10px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #596466;
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .downloads-auth-divider {

@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowDownToLine,
   CheckCircle2,
   FileText,
   Laptop,
   LoaderCircle,
-  LogIn,
   LogOut,
   Mail,
   Monitor,
@@ -15,6 +14,35 @@ import { isSupabaseConfigured, supabase } from './lib/supabase.js';
 import './downloads.css';
 
 const OWNER_EMAIL = 'ramanujan.mk@musicloudstudio.com';
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
+  || '214607907341-rffsp03uud5n2stmtjc5e0fbpv3dm89a.apps.googleusercontent.com';
+
+let googleIdentityPromise;
+
+function loadGoogleIdentity() {
+  if (window.google?.accounts?.id) return Promise.resolve(window.google);
+  if (googleIdentityPromise) return googleIdentityPromise;
+
+  googleIdentityPromise = new Promise((resolve, reject) => {
+    const existing = document.querySelector('script[data-karnatik-google-identity]');
+    const script = existing || document.createElement('script');
+
+    const handleLoad = () => resolve(window.google);
+    const handleError = () => reject(new Error('Google sign-in could not be loaded. Please try again.'));
+
+    script.addEventListener('load', handleLoad, { once: true });
+    script.addEventListener('error', handleError, { once: true });
+    if (!existing) {
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.dataset.karnatikGoogleIdentity = 'true';
+      document.head.appendChild(script);
+    }
+  });
+
+  return googleIdentityPromise;
+}
 
 const installerCopy = {
   'mac-apple-silicon': {
@@ -69,6 +97,7 @@ async function responsePayload(response) {
 }
 
 export default function DownloadsPage({ session }) {
+  const googleButtonRef = useRef(null);
   const [signingIn, setSigningIn] = useState(false);
   const [authError, setAuthError] = useState('');
   const [account, setAccount] = useState({
@@ -82,6 +111,56 @@ export default function DownloadsPage({ session }) {
   const [reportLoading, setReportLoading] = useState(false);
   const user = session?.user || null;
   const isOwner = String(user?.email || '').toLowerCase() === OWNER_EMAIL;
+
+  useEffect(() => {
+    if (user || !supabase || !GOOGLE_CLIENT_ID || !googleButtonRef.current) return undefined;
+
+    let active = true;
+    const buttonHost = googleButtonRef.current;
+
+    loadGoogleIdentity()
+      .then((google) => {
+        if (!active || !buttonHost) return;
+
+        google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: async ({ credential }) => {
+            if (!credential) {
+              setAuthError('Google did not return a sign-in credential. Please try again.');
+              return;
+            }
+
+            setSigningIn(true);
+            setAuthError('');
+            const { error } = await supabase.auth.signInWithIdToken({
+              provider: 'google',
+              token: credential
+            });
+            if (error) setAuthError(error.message);
+            setSigningIn(false);
+          }
+        });
+
+        buttonHost.replaceChildren();
+        google.accounts.id.renderButton(buttonHost, {
+          type: 'standard',
+          theme: 'outline',
+          size: 'large',
+          text: 'continue_with',
+          shape: 'rectangular',
+          logo_alignment: 'left',
+          width: Math.min(400, Math.max(240, buttonHost.clientWidth))
+        });
+      })
+      .catch((error) => {
+        if (active) setAuthError(error.message);
+      });
+
+    return () => {
+      active = false;
+      buttonHost.replaceChildren();
+    };
+  }, [user]);
 
   useEffect(() => {
     if (!session) {
@@ -138,28 +217,6 @@ export default function DownloadsPage({ session }) {
       size: 0
     });
   }, [artifacts]);
-
-  async function signInWithGoogle() {
-    if (!supabase) {
-      setAuthError('Google sign-in is not configured yet.');
-      return;
-    }
-
-    setSigningIn(true);
-    setAuthError('');
-
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/downloads`
-      }
-    });
-
-    if (error) {
-      setAuthError(error.message);
-      setSigningIn(false);
-    }
-  }
 
   function updateAccount(field, value) {
     setAccount((current) => ({ ...current, [field]: value }));
@@ -270,15 +327,12 @@ export default function DownloadsPage({ session }) {
             </div>
           </div>
           <div className="downloads-auth-panel">
-            <button
-              className="downloads-google-button"
-              type="button"
-              onClick={signInWithGoogle}
-              disabled={signingIn || !isSupabaseConfigured}
-            >
-              {signingIn ? <LoaderCircle className="downloads-spinner" size={20} /> : <LogIn size={20} />}
-              {signingIn ? 'Opening Google...' : 'Continue with Google'}
-            </button>
+            <div className="downloads-google-button-host" ref={googleButtonRef} aria-label="Continue with Google" />
+            {signingIn ? (
+              <p className="downloads-google-status">
+                <LoaderCircle className="downloads-spinner" size={18} /> Signing in securely...
+              </p>
+            ) : null}
 
             <div className="downloads-auth-divider"><span>existing email account</span></div>
 
