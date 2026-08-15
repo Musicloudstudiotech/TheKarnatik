@@ -13,7 +13,7 @@ const {
 module.exports = async function handler(req, res) {
   const user = await authenticatedUser(req);
   if (!user || !isDownloadUser(user)) {
-    res.status(401).json({ error: 'Sign in with Google or a confirmed Karnatik.ai account to access downloads.' });
+    res.status(401).json({ error: 'Sign in with a confirmed Karnatik.ai account to access downloads.' });
     return;
   }
 

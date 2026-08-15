@@ -5,7 +5,6 @@ import {
   FileText,
   Laptop,
   LoaderCircle,
-  LogIn,
   LogOut,
   Mail,
   Monitor,
@@ -147,24 +146,6 @@ export default function DownloadsPage({ session }) {
     });
   }, [artifacts]);
 
-  async function signInWithGoogle() {
-    if (!supabase) {
-      setAuthError('Google sign-in is not configured yet.');
-      return;
-    }
-    setSigningIn(true);
-    setAuthError('');
-    setAuthMessage('');
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}/downloads` }
-    });
-    if (error) {
-      setAuthError(error.message);
-      setSigningIn(false);
-    }
-  }
-
   function updateAccount(field, value) {
     setAccount((current) => ({ ...current, [field]: value }));
     setAuthError('');
@@ -298,22 +279,10 @@ export default function DownloadsPage({ session }) {
             <ShieldCheck size={30} />
             <div>
               <h2>Download the installer</h2>
-              <p>Sign in with Google or create your Karnatik.ai account to access the installer files.</p>
+              <p>Create your Karnatik.ai account or sign in to access the installer files.</p>
             </div>
           </div>
           <div className="downloads-auth-panel">
-            <button
-              className="downloads-google-button"
-              type="button"
-              onClick={signInWithGoogle}
-              disabled={signingIn || !isSupabaseConfigured}
-            >
-              {signingIn ? <LoaderCircle className="downloads-spinner" size={20} /> : <LogIn size={20} />}
-              {signingIn ? 'Opening Google...' : 'Continue with Google'}
-            </button>
-
-            <div className="downloads-auth-divider"><span>or</span></div>
-
             <div className="downloads-auth-tabs" role="tablist" aria-label="Email account access">
               <button
                 type="button"
