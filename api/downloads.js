@@ -13,7 +13,7 @@ const {
 module.exports = async function handler(req, res) {
   const user = await authenticatedUser(req);
   if (!user || !isDownloadUser(user)) {
-    res.status(401).json({ error: 'Continue with Google to access beta downloads.' });
+    res.status(401).json({ error: 'Sign in with Google or a confirmed Karnatik.ai account to access downloads.' });
     return;
   }
 
@@ -57,10 +57,16 @@ module.exports = async function handler(req, res) {
   const ticket = crypto.randomBytes(32).toString('base64url');
   const issuedAt = new Date();
   const expiresAt = new Date(issuedAt.getTime() + 5 * 60 * 1000);
+  const profile = user.user_metadata || {};
   await put(ticketPath(ticket), JSON.stringify({
     ticket,
     userId: user.id,
     email: user.email,
+    fullName: String(profile.full_name || profile.name || '').slice(0, 160),
+    gender: String(profile.gender || '').slice(0, 80),
+    city: String(profile.city || '').slice(0, 120),
+    country: String(profile.country || '').slice(0, 120),
+    phone: String(profile.phone || '').slice(0, 60),
     artifact: artifact.id,
     issuedAt: issuedAt.toISOString(),
     expiresAt: expiresAt.toISOString()

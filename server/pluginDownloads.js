@@ -10,7 +10,7 @@ const ARTIFACTS = Object.freeze({
     platform: 'macOS',
     architecture: 'Apple Silicon',
     filename: `Karnatik-Tanpura-${RELEASE_VERSION}-macOS-Apple-Silicon.pkg`,
-    pathname: `releases/${RELEASE_VERSION}/Karnatik-Tanpura-${RELEASE_VERSION}-macOS-Apple-Silicon.pkg`,
+    pathname: `Karnatik-Tanpura-${RELEASE_VERSION}-macOS-Apple-Silicon.pkg`,
     contentType: 'application/vnd.apple.installer+xml'
   },
   'mac-intel': {
@@ -18,7 +18,7 @@ const ARTIFACTS = Object.freeze({
     platform: 'macOS',
     architecture: 'Intel',
     filename: `Karnatik-Tanpura-${RELEASE_VERSION}-macOS-Intel.pkg`,
-    pathname: `releases/${RELEASE_VERSION}/Karnatik-Tanpura-${RELEASE_VERSION}-macOS-Intel.pkg`,
+    pathname: `Karnatik-Tanpura-${RELEASE_VERSION}-macOS-Intel.pkg`,
     contentType: 'application/vnd.apple.installer+xml'
   },
   'windows-x64': {
@@ -26,7 +26,7 @@ const ARTIFACTS = Object.freeze({
     platform: 'Windows',
     architecture: 'x64',
     filename: `Karnatik-Tanpura-${RELEASE_VERSION}-Windows-x64-Setup.exe`,
-    pathname: `releases/${RELEASE_VERSION}/Karnatik-Tanpura-${RELEASE_VERSION}-Windows-x64-Setup.exe`,
+    pathname: `Karnatik-Tanpura-${RELEASE_VERSION}-Windows-x64-Setup.exe`,
     contentType: 'application/vnd.microsoft.portable-executable'
   },
   'user-guide': {
@@ -34,7 +34,7 @@ const ARTIFACTS = Object.freeze({
     platform: 'Documentation',
     architecture: 'PDF',
     filename: `Karnatik-Tanpura-${RELEASE_VERSION}-User-Guide.pdf`,
-    pathname: `releases/${RELEASE_VERSION}/Karnatik-Tanpura-${RELEASE_VERSION}-User-Guide.pdf`,
+    pathname: `Karnatik-Tanpura-${RELEASE_VERSION}-User-Guide.pdf`,
     contentType: 'application/pdf'
   }
 });
@@ -73,8 +73,14 @@ function isOwner(user) {
 }
 
 function isDownloadUser(user) {
-  const provider = String(user?.app_metadata?.provider || '').toLowerCase();
-  return provider === 'google' || isOwner(user);
+  const providers = new Set([
+    String(user?.app_metadata?.provider || '').toLowerCase(),
+    ...(Array.isArray(user?.app_metadata?.providers)
+      ? user.app_metadata.providers.map((provider) => String(provider).toLowerCase())
+      : [])
+  ]);
+  const confirmedEmailAccount = providers.has('email') && Boolean(user?.email_confirmed_at);
+  return providers.has('google') || confirmedEmailAccount || isOwner(user);
 }
 
 function parseBody(req) {

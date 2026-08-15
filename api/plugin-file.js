@@ -50,6 +50,11 @@ module.exports = async function handler(req, res) {
   await put(eventPath(artifact.id, downloadedAt), JSON.stringify({
     userId: ticketData.userId,
     email: ticketData.email,
+    fullName: ticketData.fullName || '',
+    gender: ticketData.gender || '',
+    city: ticketData.city || '',
+    country: ticketData.country || '',
+    phone: ticketData.phone || '',
     artifact: artifact.id,
     platform: artifact.platform,
     architecture: artifact.architecture,

@@ -7,8 +7,10 @@ import {
   LoaderCircle,
   LogIn,
   LogOut,
+  Mail,
   Monitor,
-  ShieldCheck
+  ShieldCheck,
+  UserPlus
 } from 'lucide-react';
 import { isSupabaseConfigured, supabase } from './lib/supabase.js';
 import './downloads.css';
@@ -69,7 +71,18 @@ async function responsePayload(response) {
 
 export default function DownloadsPage({ session }) {
   const [signingIn, setSigningIn] = useState(false);
+  const [authMode, setAuthMode] = useState('create');
   const [authError, setAuthError] = useState('');
+  const [authMessage, setAuthMessage] = useState('');
+  const [account, setAccount] = useState({
+    fullName: '',
+    gender: '',
+    city: '',
+    country: '',
+    phone: '',
+    email: '',
+    password: ''
+  });
   const [artifacts, setArtifacts] = useState([]);
   const [loadingArtifacts, setLoadingArtifacts] = useState(Boolean(session));
   const [downloadState, setDownloadState] = useState({});
@@ -141,6 +154,7 @@ export default function DownloadsPage({ session }) {
     }
     setSigningIn(true);
     setAuthError('');
+    setAuthMessage('');
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${window.location.origin}/downloads` }
@@ -149,6 +163,57 @@ export default function DownloadsPage({ session }) {
       setAuthError(error.message);
       setSigningIn(false);
     }
+  }
+
+  function updateAccount(field, value) {
+    setAccount((current) => ({ ...current, [field]: value }));
+    setAuthError('');
+    setAuthMessage('');
+  }
+
+  async function handleEmailAuth(event) {
+    event.preventDefault();
+    if (!supabase) {
+      setAuthError('Account access is not configured yet.');
+      return;
+    }
+
+    setSigningIn(true);
+    setAuthError('');
+    setAuthMessage('');
+
+    if (authMode === 'signin') {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: account.email.trim(),
+        password: account.password
+      });
+      if (error) setAuthError(error.message);
+      setSigningIn(false);
+      return;
+    }
+
+    const { data, error } = await supabase.auth.signUp({
+      email: account.email.trim(),
+      password: account.password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/downloads`,
+        data: {
+          full_name: account.fullName.trim(),
+          gender: account.gender,
+          city: account.city.trim(),
+          country: account.country.trim(),
+          phone: account.phone.trim()
+        }
+      }
+    });
+
+    if (error) {
+      setAuthError(error.message);
+    } else if (!data.session) {
+      setAuthMessage('Account created. Check your email to confirm it, then return here to sign in.');
+      setAuthMode('signin');
+    }
+    setSigningIn(false);
   }
 
   async function signOut() {
@@ -229,16 +294,92 @@ export default function DownloadsPage({ session }) {
 
       {!user ? (
         <section className="downloads-gate">
-          <div>
+          <div className="downloads-gate-heading">
             <ShieldCheck size={30} />
-            <h2>Join the free beta</h2>
-            <p>Continue with Google to download. We record your email and chosen platform so we can count testers and invite you to a short feedback survey.</p>
+            <div>
+              <h2>Download the installer</h2>
+              <p>Sign in with Google or create your Karnatik.ai account to access the installer files.</p>
+            </div>
           </div>
-          <button type="button" onClick={signInWithGoogle} disabled={signingIn || !isSupabaseConfigured}>
-            {signingIn ? <LoaderCircle className="downloads-spinner" size={20} /> : <LogIn size={20} />}
-            {signingIn ? 'Opening Google...' : 'Continue with Google'}
-          </button>
-          {authError ? <p className="downloads-error">{authError}</p> : null}
+          <div className="downloads-auth-panel">
+            <button
+              className="downloads-google-button"
+              type="button"
+              onClick={signInWithGoogle}
+              disabled={signingIn || !isSupabaseConfigured}
+            >
+              {signingIn ? <LoaderCircle className="downloads-spinner" size={20} /> : <LogIn size={20} />}
+              {signingIn ? 'Opening Google...' : 'Continue with Google'}
+            </button>
+
+            <div className="downloads-auth-divider"><span>or</span></div>
+
+            <div className="downloads-auth-tabs" role="tablist" aria-label="Email account access">
+              <button
+                type="button"
+                className={authMode === 'create' ? 'active' : ''}
+                onClick={() => { setAuthMode('create'); setAuthError(''); setAuthMessage(''); }}
+              >
+                Create account
+              </button>
+              <button
+                type="button"
+                className={authMode === 'signin' ? 'active' : ''}
+                onClick={() => { setAuthMode('signin'); setAuthError(''); setAuthMessage(''); }}
+              >
+                Sign in
+              </button>
+            </div>
+
+            <form className="downloads-account-form" onSubmit={handleEmailAuth}>
+              {authMode === 'create' ? (
+                <div className="downloads-profile-fields">
+                  <label>
+                    <span>Full name</span>
+                    <input value={account.fullName} onChange={(event) => updateAccount('fullName', event.target.value)} autoComplete="name" required />
+                  </label>
+                  <label>
+                    <span>Gender</span>
+                    <select value={account.gender} onChange={(event) => updateAccount('gender', event.target.value)} required>
+                      <option value="">Select</option>
+                      <option value="female">Female</option>
+                      <option value="male">Male</option>
+                      <option value="non-binary">Non-binary</option>
+                      <option value="prefer-not-to-say">Prefer not to say</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>City</span>
+                    <input value={account.city} onChange={(event) => updateAccount('city', event.target.value)} autoComplete="address-level2" required />
+                  </label>
+                  <label>
+                    <span>Country</span>
+                    <input value={account.country} onChange={(event) => updateAccount('country', event.target.value)} autoComplete="country-name" required />
+                  </label>
+                  <label className="downloads-phone-field">
+                    <span>Phone number <em>Optional</em></span>
+                    <input type="tel" value={account.phone} onChange={(event) => updateAccount('phone', event.target.value)} autoComplete="tel" />
+                  </label>
+                </div>
+              ) : null}
+
+              <label>
+                <span>Email</span>
+                <input type="email" value={account.email} onChange={(event) => updateAccount('email', event.target.value)} autoComplete="email" required />
+              </label>
+              <label>
+                <span>Password</span>
+                <input type="password" value={account.password} onChange={(event) => updateAccount('password', event.target.value)} autoComplete={authMode === 'create' ? 'new-password' : 'current-password'} minLength={8} required />
+              </label>
+              <button className="downloads-email-button" type="submit" disabled={signingIn || !isSupabaseConfigured}>
+                {signingIn ? <LoaderCircle className="downloads-spinner" size={19} /> : authMode === 'create' ? <UserPlus size={19} /> : <Mail size={19} />}
+                {signingIn ? 'Please wait...' : authMode === 'create' ? 'Create account' : 'Sign in with email'}
+              </button>
+            </form>
+
+            {authError ? <p className="downloads-error">{authError}</p> : null}
+            {authMessage ? <p className="downloads-auth-message">{authMessage}</p> : null}
+          </div>
         </section>
       ) : (
         <>
@@ -312,7 +453,7 @@ export default function DownloadsPage({ session }) {
       </section>
 
       <footer className="downloads-footer">
-        <span>A Musicloud Studio instrument from Karnatik.ai</span>
+        <span>A Musicloudstudio &amp; Technology instrument from Karnatik.ai</span>
         <a href="mailto:ramanujan.mk@musicloudstudio.com">Beta support</a>
       </footer>
     </main>

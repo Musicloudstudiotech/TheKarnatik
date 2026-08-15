@@ -52,7 +52,20 @@ module.exports = async function handler(req, res) {
   }
 
   if (String(req.query?.format || '').toLowerCase() === 'csv') {
-    const columns = ['downloadedAt', 'email', 'artifact', 'platform', 'architecture', 'version', 'userAgent'];
+    const columns = [
+      'downloadedAt',
+      'email',
+      'fullName',
+      'gender',
+      'city',
+      'country',
+      'phone',
+      'artifact',
+      'platform',
+      'architecture',
+      'version',
+      'userAgent'
+    ];
     const csv = [columns.join(','), ...events.map((event) => columns.map((column) => csvCell(event[column])).join(','))].join('\n');
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename="karnatik-tanpura-downloads.csv"');
