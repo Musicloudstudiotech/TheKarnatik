@@ -1,13 +1,18 @@
-const crypto = require('node:crypto');
-const { head, put } = require('@vercel/blob');
+const {
+  getDownloadUrl,
+  head,
+  issueSignedToken,
+  presignUrl,
+  put
+} = require('@vercel/blob');
 const {
   ARTIFACTS,
   artifactFor,
   authenticatedUser,
+  eventPath,
   isDownloadUser,
   parseBody,
-  publicArtifact,
-  ticketPath
+  publicArtifact
 } = require('../server/pluginDownloads.js');
 
 module.exports = async function handler(req, res) {
@@ -54,12 +59,23 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const ticket = crypto.randomBytes(32).toString('base64url');
   const issuedAt = new Date();
   const expiresAt = new Date(issuedAt.getTime() + 5 * 60 * 1000);
   const profile = user.user_metadata || {};
-  await put(ticketPath(ticket), JSON.stringify({
-    ticket,
+
+  const signedToken = await issueSignedToken({
+    pathname: artifact.pathname,
+    operations: ['get'],
+    validUntil: expiresAt.getTime()
+  });
+  const { presignedUrl } = await presignUrl(signedToken, {
+    access: 'private',
+    operation: 'get',
+    pathname: artifact.pathname,
+    validUntil: expiresAt.getTime()
+  });
+
+  await put(eventPath(artifact.id, issuedAt.toISOString()), JSON.stringify({
     userId: user.id,
     email: user.email,
     fullName: String(profile.full_name || profile.name || '').slice(0, 160),
@@ -67,18 +83,20 @@ module.exports = async function handler(req, res) {
     city: String(profile.city || '').slice(0, 120),
     country: String(profile.country || '').slice(0, 120),
     phone: String(profile.phone || '').slice(0, 60),
-    artifact: artifact.id,
-    issuedAt: issuedAt.toISOString(),
-    expiresAt: expiresAt.toISOString()
+    platform: artifact.platform,
+    architecture: artifact.architecture,
+    version: '0.3.0',
+    downloadedAt: issuedAt.toISOString(),
+    userAgent: String(req.headers['user-agent'] || '').slice(0, 500)
   }), {
     access: 'private',
     addRandomSuffix: false,
     contentType: 'application/json',
     cacheControlMaxAge: 60
-  });
+  }).catch(() => {});
 
   res.status(201).json({
-    downloadUrl: `/api/plugin-file?ticket=${encodeURIComponent(ticket)}`,
+    downloadUrl: getDownloadUrl(presignedUrl),
     expiresAt: expiresAt.toISOString()
   });
 };
