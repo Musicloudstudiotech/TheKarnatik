@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import './styles.css';
 import { isSupabaseConfigured, supabase } from './lib/supabase.js';
+import DownloadsPage from './DownloadsPage.jsx';
 import {
   databaseStats,
   earTrainingLevels,
@@ -57,7 +58,10 @@ function normalizeEmail(email) {
 }
 
 function pageFromLocation() {
-  return window.location.pathname.toLowerCase() === '/kanban' ? 'kanban' : 'practice';
+  const path = window.location.pathname.toLowerCase();
+  if (path === '/kanban') return 'kanban';
+  if (path === '/chordanalyser' || path === '/chord-analyser') return 'chords';
+  return 'practice';
 }
 const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const tamburaSamples = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -846,7 +850,7 @@ function App({ user, onSignOut }) {
   }, [query, system]);
 
   const selected = ragas.find((raga) => raga.id === selectedId) || filtered[0] || ragas[0];
-  const showLibraryPane = ['practice', 'chords'].includes(activePage);
+  const showLibraryPane = activePage === 'practice';
   const showCompanionPane = activePage === 'practice';
   const harmony = useMemo(() => getHarmony(selected, pitch), [selected, pitch]);
   const activeTala = getActiveTala(practiceSystem, talaId);
@@ -862,7 +866,11 @@ function App({ user, onSignOut }) {
 
   function navigateToPage(page) {
     setActivePage(page);
-    const path = page === 'kanban' ? '/Kanban' : '/app';
+    const path = page === 'kanban'
+      ? '/Kanban'
+      : page === 'chords'
+        ? '/ChordAnalyser'
+        : '/app';
     window.history.pushState({ activePage: page }, '', path);
   }
 
@@ -2289,10 +2297,21 @@ function formatSwaraCounts(items = []) {
 
 function ChordAnalyserPage({ pitch, setPitch, selectedId }) {
   const initialRaga = ragas.find((item) => item.id === selectedId) || ragas[0];
+  const [analyserMode, setAnalyserMode] = useState('tune');
   const [ragaId, setRagaId] = useState(initialRaga.id);
   const [notationView, setNotationView] = useState('Karnatik');
   const [chordRoot, setChordRoot] = useState(pitch);
   const [chordQuality, setChordQuality] = useState('major');
+  const tuneSessionRef = useRef(null);
+  const [tuneAnalysis, setTuneAnalysis] = useState({
+    status: 'idle',
+    root: '',
+    heardSwaras: [],
+    evidenceFrames: [],
+    chords: [],
+    stage: 'Hold Sa first, then sing your tune.',
+    error: ''
+  });
   const raga = ragas.find((item) => item.id === ragaId) || initialRaga;
   const harmony = useMemo(() => getHarmony(raga, pitch), [raga, pitch]);
   const displayedScale = useMemo(
@@ -2307,14 +2326,258 @@ function ChordAnalyserPage({ pitch, setPitch, selectedId }) {
   const colorChords = harmony.chords.filter((chord) => chord.priority === 'color');
   const carefulChords = harmony.chords.filter((chord) => chord.priority === 'careful');
 
+  useEffect(() => () => stopTuneSession(tuneSessionRef.current), []);
+
+  function stopTuneSession(session) {
+    if (!session) return;
+    cancelAnimationFrame(session.rafId);
+    session.stream?.getTracks().forEach((track) => track.stop());
+    session.audioContext?.close().catch(() => {});
+    if (tuneSessionRef.current === session) tuneSessionRef.current = null;
+  }
+
+  function chooseAnalyserMode(nextMode) {
+    if (nextMode !== 'tune' && tuneSessionRef.current) {
+      stopTuneSession(tuneSessionRef.current);
+      setTuneAnalysis((current) => ({
+        ...current,
+        status: 'idle',
+        stage: 'Tune analysis stopped.',
+        error: ''
+      }));
+    }
+    setAnalyserMode(nextMode);
+  }
+
+  async function toggleTuneAnalysis() {
+    if (tuneAnalysis.status === 'listening') {
+      finishTuneAnalysis();
+      return;
+    }
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setTuneAnalysis((current) => ({
+        ...current,
+        status: 'error',
+        stage: 'Microphone is not available.',
+        error: 'This browser cannot access your microphone.'
+      }));
+      return;
+    }
+
+    try {
+      setTuneAnalysis({
+        status: 'listening',
+        root: '',
+        heardSwaras: [],
+        evidenceFrames: [],
+        chords: [],
+        stage: 'Listening for a steady Sa.',
+        error: ''
+      });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+          channelCount: 1
+        }
+      });
+      const audioContext = new AudioContext();
+      const source = audioContext.createMediaStreamSource(stream);
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 4096;
+      source.connect(analyser);
+      const session = {
+        stream,
+        audioContext,
+        analyser,
+        buffer: new Float32Array(analyser.fftSize),
+        rootSamples: [],
+        heard: [],
+        root: '',
+        pitchWindow: [],
+        lastAcceptedFrequency: 0,
+        lastInterval: null,
+        rafId: 0
+      };
+      tuneSessionRef.current = session;
+
+      const tick = () => {
+        if (tuneSessionRef.current !== session) return;
+        analyser.getFloatTimeDomainData(session.buffer);
+        const rawFrequency = detectPitch(session.buffer, audioContext.sampleRate);
+        const frequency = smoothDetectedFrequency(session, rawFrequency);
+        if (frequency) {
+          const detected = frequencyToNote(frequency);
+          if (isStableDetectedPitch(detected, session.root ? 52 : 44)) {
+            if (!session.root) {
+              session.rootSamples.push({ note: detected.note, frequency });
+              const rootNotes = summarizeHeardNotes(session.rootSamples);
+              const candidateRoot = rootNotes[0]?.note || detected.note;
+              const rootConfidence = rootNotes[0] ? rootNotes[0].count / session.rootSamples.length : 0;
+              if (session.rootSamples.length >= 18 && rootConfidence >= 0.72) {
+                session.root = candidateRoot;
+                setPitch(candidateRoot);
+                setChordRoot(candidateRoot);
+              }
+              setTuneAnalysis((current) => ({
+                ...current,
+                status: 'listening',
+                root: session.root,
+                stage: session.root
+                  ? `Sa locked as ${session.root}. Sing the tune, then stop.`
+                  : `Finding Sa: ${candidateRoot} at ${Math.round(rootConfidence * 100)}% stability.`
+              }));
+            } else {
+              const interval = noteToInterval(detected.note, session.root);
+              session.heard.push({ note: detected.note, frequency, interval });
+              if (interval !== session.lastInterval || session.heard.length % 8 === 0) {
+                session.lastInterval = interval;
+                const decision = selectDecisionSwaras(summarizeStableHeardIntervals(buildHeldSwaraSegments(session.heard)));
+                const heardSwaras = includeDetectedSa(
+                  cleanDetectedSwaras(decision.kept),
+                  session.rootSamples.length
+                );
+                setTuneAnalysis((current) => ({
+                  ...current,
+                  status: 'listening',
+                  root: session.root,
+                  heardSwaras,
+                  stage: `Listening: ${heardSwaras.map((item) => item.swara).join(' ') || 'waiting for held notes'}.`
+                }));
+              }
+            }
+          }
+        }
+        session.rafId = requestAnimationFrame(tick);
+      };
+      tick();
+    } catch (error) {
+      setTuneAnalysis((current) => ({
+        ...current,
+        status: 'error',
+        stage: error?.name === 'NotAllowedError' ? 'Microphone permission was blocked.' : 'Could not start tune analysis.',
+        error: error?.name === 'NotAllowedError' ? 'Allow microphone access and try again.' : 'Could not start tune analysis.'
+      }));
+    }
+  }
+
+  function finishTuneAnalysis() {
+    const session = tuneSessionRef.current;
+    if (!session) return;
+    stopTuneSession(session);
+
+    const heldSegments = buildHeldSwaraSegments(session.heard);
+    const decision = selectDecisionSwaras(summarizeStableHeardIntervals(heldSegments));
+    const heardSwaras = includeDetectedSa(
+      cleanDetectedSwaras(decision.kept),
+      session.rootSamples.length
+    );
+    const evidenceFrames = buildEvidenceFrames(heldSegments, session.root);
+    const chords = getTuneChordSuggestions(session.root, heardSwaras);
+
+    if (!session.root || heardSwaras.length < 2) {
+      setTuneAnalysis({
+        status: 'error',
+        root: session.root,
+        heardSwaras,
+        evidenceFrames,
+        chords: [],
+        stage: 'Not enough stable notes were captured.',
+        error: 'Hold Sa first, then sing each phrase clearly before stopping.'
+      });
+      return;
+    }
+
+    setTuneAnalysis({
+      status: 'ready',
+      root: session.root,
+      heardSwaras,
+      evidenceFrames,
+      chords,
+      stage: chords.length
+        ? `${chords.length} compatible chords found from the detected pitch set.`
+        : 'The pitch set is too sparse for a full chord. Use Sa/Pa support.',
+      error: ''
+    });
+  }
+
   return (
     <section className="raga-pane chord-page">
       <div className="chord-hero">
         <span>Composer Tool</span>
         <h1>Chord Analyser</h1>
-        <p>Map a raga to your singing key, find safe support chords, and test whether a chord respects the raga swaras.</p>
+        <p>Analyse a sung tune from its stable swaras, or map a known raga to your singing key.</p>
       </div>
 
+      <div className="analyser-mode-switch" role="tablist" aria-label="Chord analyser mode">
+        <button className={analyserMode === 'tune' ? 'active' : ''} onClick={() => chooseAnalyserMode('tune')}><Mic size={16} /> Sing a Tune</button>
+        <button className={analyserMode === 'raga' ? 'active' : ''} onClick={() => chooseAnalyserMode('raga')}><Music2 size={16} /> Choose a Raga</button>
+      </div>
+
+      {analyserMode === 'tune' ? (
+        <div className="tune-analyser-workspace">
+          <section className={`tune-capture ${tuneAnalysis.status}`}>
+            <div>
+              <span>Live Pitch Analysis</span>
+              <h2>{tuneAnalysis.root ? `Sa: ${tuneAnalysis.root}` : 'Hold a steady Sa'}</h2>
+              <p>{tuneAnalysis.stage}</p>
+              {tuneAnalysis.error ? <small className="detector-error">{tuneAnalysis.error}</small> : null}
+            </div>
+            <button className={tuneAnalysis.status === 'listening' ? 'listening' : ''} onClick={toggleTuneAnalysis}>
+              {tuneAnalysis.status === 'listening' ? <MicOff size={18} /> : <Mic size={18} />}
+              {tuneAnalysis.status === 'listening' ? 'Stop & Analyse' : 'Start Listening'}
+            </button>
+          </section>
+
+          {tuneAnalysis.heardSwaras.length ? (
+            <section className="tune-evidence">
+              <div className="section-heading">
+                <div>
+                  <span>Detected Pitch Set</span>
+                  <h2>Stable swaras</h2>
+                </div>
+                <small>Approximation only; no raga is being identified.</small>
+              </div>
+              <div className="chord-scale-strip detected-scale-strip">
+                {tuneAnalysis.heardSwaras.map((item) => (
+                  <span key={item.interval}>
+                    <b>{item.swara}</b>
+                    {noteFromInterval(tuneAnalysis.root, item.interval)}
+                    <small>{item.count} frames</small>
+                  </span>
+                ))}
+              </div>
+              {tuneAnalysis.evidenceFrames.length ? (
+                <div className="frequency-evidence-row">
+                  {tuneAnalysis.evidenceFrames.map((frame) => (
+                    <span key={`${frame.index}-${frame.interval}`}><b>{frame.swara}</b> {frame.frequency} Hz</span>
+                  ))}
+                </div>
+              ) : null}
+            </section>
+          ) : null}
+
+          {tuneAnalysis.status === 'ready' ? (
+            <section className="tune-chord-results">
+              <div className="section-heading">
+                <div>
+                  <span>Phrase Harmony</span>
+                  <h2>Compatible chords</h2>
+                  <p>Every chord below uses only the stable pitch positions detected in your tune.</p>
+                </div>
+              </div>
+              {tuneAnalysis.chords.length ? (
+                <ChordSuggestionList chords={tuneAnalysis.chords} />
+              ) : (
+                <div className="tune-empty-result">Use {tuneAnalysis.root} and {noteFromInterval(tuneAnalysis.root, 7)} as a sparse Sa/Pa support.</div>
+              )}
+            </section>
+          ) : null}
+        </div>
+      ) : (
+      <>
       <div className="chord-control-panel">
         <label>Raga
           <select value={ragaId} onChange={(event) => setRagaId(event.target.value)}>
@@ -2409,6 +2672,8 @@ function ChordAnalyserPage({ pitch, setPitch, selectedId }) {
         <div className="careful-strip">
           {carefulChords.map((chord) => <span key={chord.name}>{chord.name}: {chord.notes.join(' - ')}</span>)}
         </div>
+      )}
+      </>
       )}
     </section>
   );
@@ -3925,6 +4190,14 @@ function cleanDetectedSwaras(intervals) {
   return Array.from(byInterval.values()).sort((a, b) => a.interval - b.interval);
 }
 
+function includeDetectedSa(intervals, count = 1) {
+  if (intervals.some((item) => item.interval === 0)) return intervals;
+  return [
+    { interval: 0, swara: 'S', count: Math.max(1, count), strength: 100, decision: 'accepted', decisionReason: 'locked Sa' },
+    ...intervals
+  ].sort((a, b) => a.interval - b.interval);
+}
+
 function describeMadhyamamCapture(heardSwaras, root) {
   const heardIntervals = new Set(heardSwaras.map((item) => item.interval));
   const m1Note = noteFromInterval(root, 5);
@@ -4626,6 +4899,49 @@ function playSingleSwara(swara, root) {
   playSwaraLine([swara], root, `single-${root}-${swara}`);
 }
 
+function getTuneChordSuggestions(root, heardSwaras = []) {
+  const rootIndex = chromatic.indexOf(root);
+  if (rootIndex < 0 || heardSwaras.length < 2) return [];
+
+  const scaleSet = new Set(heardSwaras.map((item) => item.interval));
+  scaleSet.add(0);
+  const counts = new Map(heardSwaras.map((item) => [item.interval, item.count || 1]));
+  counts.set(0, Math.max(counts.get(0) || 0, 1));
+  const totalCount = [...counts.values()].reduce((sum, count) => sum + count, 0) || 1;
+  const candidates = [];
+
+  for (const baseInterval of scaleSet) {
+    for (const [quality, pattern] of Object.entries(triadPatterns)) {
+      const chordIntervals = pattern.map((step) => (baseInterval + step) % 12);
+      if (!chordIntervals.every((interval) => scaleSet.has(interval))) continue;
+      const baseNote = chromatic[(rootIndex + baseInterval) % 12];
+      const coverage = chordIntervals.reduce((sum, interval) => sum + (counts.get(interval) || 0), 0) / totalCount;
+      const priority = baseInterval === 0 || baseInterval === 7 ? 'anchor' : 'color';
+      candidates.push({
+        name: `${baseNote}${chordSuffix(quality)}`,
+        notes: chordIntervals.map((interval) => chromatic[(rootIndex + interval) % 12]),
+        baseInterval,
+        quality,
+        role: baseInterval === 0 ? 'Sa anchor' : baseInterval === 7 ? 'Pa support' : 'Phrase color',
+        reason: `${Math.round(coverage * 100)}% of held-note evidence; detected pitches only`,
+        priority,
+        coverage
+      });
+    }
+  }
+
+  return candidates
+    .filter((chord, index, list) => list.findIndex((item) => item.name === chord.name) === index)
+    .sort((left, right) => {
+      const priorityDifference = (left.priority === 'anchor' ? 0 : 1) - (right.priority === 'anchor' ? 0 : 1);
+      if (priorityDifference) return priorityDifference;
+      const coverageDifference = right.coverage - left.coverage;
+      if (coverageDifference) return coverageDifference;
+      return (chordQualityRank[left.quality] ?? 9) - (chordQualityRank[right.quality] ?? 9);
+    })
+    .slice(0, 8);
+}
+
 function getHarmony(raga, root) {
   const uniqueSwaras = Array.from(new Set(raga.arohana.concat(raga.avarohana).map(normalizeSwara))).filter(
     (swara) => swara !== '|' && swaraIntervals[swara] !== undefined
@@ -4880,6 +5196,7 @@ function LandingPage({
         <nav aria-label="Landing page navigation">
           <a href="#story">Our story</a>
           <a href="#legacy">Legacy</a>
+          <a href="/downloads">Downloads</a>
           <a href="#beta">Private beta</a>
         </nav>
         {user ? (
@@ -5038,6 +5355,7 @@ function LandingPage({
 }
 
 function AuthGate() {
+  const isDownloadsRoute = window.location.pathname.toLowerCase() === '/downloads';
   const [session, setSession] = useState(null);
   const [workspaceOpen, setWorkspaceOpen] = useState(() => {
     const path = window.location.pathname.toLowerCase();
@@ -5132,8 +5450,29 @@ function AuthGate() {
     );
   }
 
-  if (session && workspaceOpen) {
+  if (isDownloadsRoute) {
+    return <DownloadsPage session={session} />;
+  }
+
+  const provider = String(session?.user?.app_metadata?.provider || '');
+  const isWorkspaceOwner = normalizeEmail(session?.user?.email) === KANBAN_OWNER_EMAIL;
+  const canOpenWorkspace = provider !== 'google' || isWorkspaceOwner;
+
+  if (session && workspaceOpen && canOpenWorkspace) {
     return <App user={session.user} onSignOut={signOut} />;
+  }
+
+  if (session && workspaceOpen && !canOpenWorkspace) {
+    return (
+      <main className="access-gate">
+        <section className="access-panel">
+          <p className="access-kicker">Downloads access</p>
+          <h1>Your Google sign-in unlocks beta downloads.</h1>
+          <p className="access-copy">The RAGA Companion workspace remains invite-only.</p>
+          <a className="landing-primary" href="/downloads">Open downloads <ArrowRight size={18} /></a>
+        </section>
+      </main>
+    );
   }
 
   if (!isSupabaseConfigured) {

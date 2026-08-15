@@ -9,6 +9,7 @@
   "dependencies": {
     "@audio/pitch": "^2.0.3",
     "@supabase/supabase-js": "^2.110.0",
+    "@vercel/blob": "^2.8.0",
     "@vitejs/plugin-react": "latest",
     "lucide-react": "latest",
     "react": "latest",
