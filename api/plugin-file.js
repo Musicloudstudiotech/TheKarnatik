@@ -1,4 +1,5 @@
 const { Readable } = require('node:stream');
+const { pipeline } = require('node:stream/promises');
 const { del, get, put } = require('@vercel/blob');
 const {
   artifactFor,
@@ -46,6 +47,21 @@ module.exports = async function handler(req, res) {
     return;
   }
 
+  res.setHeader('Content-Type', artifact.contentType || fileResult.blob.contentType || 'application/octet-stream');
+  res.setHeader('Content-Disposition', `attachment; filename="${artifact.filename}"`);
+  res.setHeader('Content-Length', String(fileResult.blob.size));
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Cache-Control', 'private, no-store');
+
+  try {
+    await pipeline(Readable.fromWeb(fileResult.stream), res);
+  } catch (error) {
+    if (!res.headersSent) {
+      res.status(502).send('The installer transfer was interrupted. Please try again.');
+    }
+    return;
+  }
+
   const downloadedAt = new Date().toISOString();
   await put(eventPath(artifact.id, downloadedAt), JSON.stringify({
     userId: ticketData.userId,
@@ -65,13 +81,6 @@ module.exports = async function handler(req, res) {
     access: 'private',
     addRandomSuffix: false,
     contentType: 'application/json'
-  });
+  }).catch(() => {});
   await del(pathname).catch(() => {});
-
-  res.setHeader('Content-Type', artifact.contentType || fileResult.blob.contentType || 'application/octet-stream');
-  res.setHeader('Content-Disposition', `attachment; filename="${artifact.filename}"`);
-  res.setHeader('Content-Length', String(fileResult.blob.size));
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('Cache-Control', 'private, no-store');
-  Readable.fromWeb(fileResult.stream).pipe(res);
 };
