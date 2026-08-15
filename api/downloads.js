@@ -46,11 +46,13 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const artifact = artifactFor(parseBody(req).artifact);
+  const body = parseBody(req);
+  const artifact = artifactFor(body.artifact);
   if (!artifact) {
     res.status(400).json({ error: 'Unknown download.' });
     return;
   }
+  const intent = body.intent === 'view' && artifact.id === 'user-guide' ? 'view' : 'download';
 
   try {
     await head(artifact.pathname);
@@ -75,28 +77,31 @@ module.exports = async function handler(req, res) {
     validUntil: expiresAt.getTime()
   });
 
-  await put(eventPath(artifact.id, issuedAt.toISOString()), JSON.stringify({
-    userId: user.id,
-    email: user.email,
-    fullName: String(profile.full_name || profile.name || '').slice(0, 160),
-    gender: String(profile.gender || '').slice(0, 80),
-    city: String(profile.city || '').slice(0, 120),
-    country: String(profile.country || '').slice(0, 120),
-    phone: String(profile.phone || '').slice(0, 60),
-    platform: artifact.platform,
-    architecture: artifact.architecture,
-    version: '0.3.0',
-    downloadedAt: issuedAt.toISOString(),
-    userAgent: String(req.headers['user-agent'] || '').slice(0, 500)
-  }), {
-    access: 'private',
-    addRandomSuffix: false,
-    contentType: 'application/json',
-    cacheControlMaxAge: 60
-  }).catch(() => {});
+  if (intent === 'download') {
+    await put(eventPath(artifact.id, issuedAt.toISOString()), JSON.stringify({
+      userId: user.id,
+      email: user.email,
+      fullName: String(profile.full_name || profile.name || '').slice(0, 160),
+      gender: String(profile.gender || '').slice(0, 80),
+      city: String(profile.city || '').slice(0, 120),
+      country: String(profile.country || '').slice(0, 120),
+      phone: String(profile.phone || '').slice(0, 60),
+      platform: artifact.platform,
+      architecture: artifact.architecture,
+      version: '0.3.0',
+      downloadedAt: issuedAt.toISOString(),
+      userAgent: String(req.headers['user-agent'] || '').slice(0, 500)
+    }), {
+      access: 'private',
+      addRandomSuffix: false,
+      contentType: 'application/json',
+      cacheControlMaxAge: 60
+    }).catch(() => {});
+  }
 
   res.status(201).json({
     downloadUrl: getDownloadUrl(presignedUrl),
+    viewUrl: presignedUrl,
     expiresAt: expiresAt.toISOString()
   });
 };

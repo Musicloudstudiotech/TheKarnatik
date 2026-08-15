@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowDownToLine,
   CheckCircle2,
+  Eye,
   FileText,
   Laptop,
   LoaderCircle,
@@ -246,22 +247,31 @@ export default function DownloadsPage({ session }) {
     window.location.replace('/downloads');
   }
 
-  async function startDownload(artifact) {
+  async function accessArtifact(artifact, intent = 'download') {
     if (!session || !artifact.available) return;
-    setDownloadState((current) => ({ ...current, [artifact.id]: 'starting' }));
+    const stateKey = `${artifact.id}:${intent}`;
+    const viewer = intent === 'view' ? window.open('about:blank', '_blank') : null;
+    if (viewer) viewer.opener = null;
+    setDownloadState((current) => ({ ...current, [stateKey]: 'starting' }));
     setAuthError('');
     try {
       const response = await authorizedFetch('/api/downloads', session, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ artifact: artifact.id })
+        body: JSON.stringify({ artifact: artifact.id, intent })
       });
       const payload = await responsePayload(response);
       if (!response.ok) throw new Error(payload.error || 'The download could not be started.');
-      setDownloadState((current) => ({ ...current, [artifact.id]: 'ready' }));
-      window.location.assign(payload.downloadUrl);
+      setDownloadState((current) => ({ ...current, [stateKey]: 'ready' }));
+      if (intent === 'view') {
+        if (viewer) viewer.location.replace(payload.viewUrl);
+        else window.open(payload.viewUrl, '_blank', 'noopener,noreferrer');
+      } else {
+        window.location.assign(payload.downloadUrl);
+      }
     } catch (error) {
-      setDownloadState((current) => ({ ...current, [artifact.id]: 'error' }));
+      if (viewer) viewer.close();
+      setDownloadState((current) => ({ ...current, [stateKey]: 'error' }));
       setAuthError(error.message);
     }
   }
@@ -301,24 +311,15 @@ export default function DownloadsPage({ session }) {
         </div>
       </header>
 
-      <section className="downloads-intro">
-        <div className="downloads-copy">
-          <p className="downloads-product-line">Karnatik Tanpura</p>
-          <h1>Real Shruthi for every DAW.</h1>
-          <p>A four-string, real-sample tanpura instrument with pitch-preserving BPM control, Pa and Ma Shruthi modes, reverb, and bar-aligned WAV export.</p>
-          <div className="downloads-format-line">
-            <span>Version 0.3.0 beta</span>
-            <span>AU + VST3</span>
-            <span>Mac + Windows</span>
-          </div>
-        </div>
-        <div className="downloads-instrument" aria-label="Karnatik Tanpura instrument preview">
-          <img src="/images/karnatik-tanpura-plugin.webp" alt="Four-string tanpura used in the Karnatik Tanpura plug-in" />
-        </div>
-      </section>
+      <a className="downloads-banner" href="#download-access" aria-label="Continue to Karnatik Tanpura downloads">
+        <img
+          src="/images/karnatik-tanpura-downloads-banner.webp"
+          alt="Karnatik Tanpura VST with Shruthi, string mode, BPM, volume, stereo width, and reverb controls"
+        />
+      </a>
 
       {!user ? (
-        <section className="downloads-gate">
+        <section className="downloads-gate" id="download-access">
           <div className="downloads-gate-heading">
             <ShieldCheck size={30} />
             <div>
@@ -356,7 +357,7 @@ export default function DownloadsPage({ session }) {
         </section>
       ) : (
         <>
-          <section className="downloads-session-bar">
+          <section className="downloads-session-bar" id="download-access">
             <div>
               <CheckCircle2 size={20} />
               <span>Signed in as <strong>{user.email}</strong></span>
@@ -368,7 +369,8 @@ export default function DownloadsPage({ session }) {
             {orderedArtifacts.map((artifact) => {
               const copy = installerCopy[artifact.id];
               const Icon = copy.icon;
-              const downloading = downloadState[artifact.id] === 'starting';
+              const downloading = downloadState[`${artifact.id}:download`] === 'starting';
+              const viewing = downloadState[`${artifact.id}:view`] === 'starting';
               return (
                 <article className="download-row" key={artifact.id}>
                   <div className="download-platform-icon"><Icon size={25} /></div>
@@ -380,15 +382,29 @@ export default function DownloadsPage({ session }) {
                     <strong>{copy.formats}</strong>
                     <span>{artifact.available ? formatBytes(artifact.size) : 'Preparing build'}</span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => startDownload(artifact)}
-                    disabled={!artifact.available || downloading || loadingArtifacts}
-                    title={artifact.available ? `Download ${copy.title}` : `${copy.title} is being prepared`}
-                  >
-                    {downloading ? <LoaderCircle className="downloads-spinner" size={19} /> : <ArrowDownToLine size={19} />}
-                    {downloading ? 'Starting...' : artifact.available ? 'Download' : 'Soon'}
-                  </button>
+                  <div className="download-actions">
+                    {artifact.id === 'user-guide' ? (
+                      <button
+                        className="download-secondary-action"
+                        type="button"
+                        onClick={() => accessArtifact(artifact, 'view')}
+                        disabled={!artifact.available || viewing || loadingArtifacts}
+                        title={artifact.available ? 'Read the beta user guide' : 'The beta user guide is being prepared'}
+                      >
+                        {viewing ? <LoaderCircle className="downloads-spinner" size={19} /> : <Eye size={19} />}
+                        {viewing ? 'Opening...' : artifact.available ? 'Read PDF' : 'Soon'}
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => accessArtifact(artifact)}
+                      disabled={!artifact.available || downloading || loadingArtifacts}
+                      title={artifact.available ? `Download ${copy.title}` : `${copy.title} is being prepared`}
+                    >
+                      {downloading ? <LoaderCircle className="downloads-spinner" size={19} /> : <ArrowDownToLine size={19} />}
+                      {downloading ? 'Starting...' : artifact.available ? artifact.id === 'user-guide' ? 'Download PDF' : 'Download' : 'Soon'}
+                    </button>
+                  </div>
                 </article>
               );
             })}
