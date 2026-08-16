@@ -74,7 +74,7 @@ module.exports = async function handler(req, res) {
     artifact: artifact.id,
     platform: artifact.platform,
     architecture: artifact.architecture,
-    version: '0.3.0',
+    version: artifact.version || '0.3.0',
     downloadedAt,
     userAgent: String(req.headers['user-agent'] || '').slice(0, 500)
   }), {

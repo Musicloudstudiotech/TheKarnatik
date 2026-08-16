@@ -25,8 +25,11 @@ const ARTIFACTS = Object.freeze({
     id: 'windows-x64',
     platform: 'Windows',
     architecture: 'x64',
-    filename: `Karnatik-Tanpura-${RELEASE_VERSION}-Windows-x64-Setup.exe`,
-    pathname: `Karnatik-Tanpura-${RELEASE_VERSION}-Windows-x64-Setup.exe`,
+    version: '0.3.1',
+    filename: 'Karnatik-Tanpura-0.3.1-Windows-x64-Setup.exe',
+    pathname: 'Karnatik-Tanpura-0.3.1-Windows-x64-Setup.exe',
+    publicPath: '/downloads/Karnatik-Tanpura-0.3.1-Windows-x64-Setup.exe',
+    size: 70129852,
     contentType: 'application/vnd.microsoft.portable-executable'
   },
   'user-guide': {
@@ -113,8 +116,8 @@ function publicArtifact(artifact, metadata) {
     platform: artifact.platform,
     architecture: artifact.architecture,
     filename: artifact.filename,
-    version: RELEASE_VERSION,
-    available: Boolean(metadata || artifact.publicPath),
+    version: artifact.version || RELEASE_VERSION,
+    available: Boolean(metadata || artifact.publicPath || artifact.publicUrl),
     size: Number(metadata?.size || artifact.size || 0)
   };
 }

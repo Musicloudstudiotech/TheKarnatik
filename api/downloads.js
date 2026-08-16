@@ -29,7 +29,7 @@ module.exports = async function handler(req, res) {
 
   if (req.method === 'GET') {
     const artifacts = await Promise.all(Object.values(ARTIFACTS).map(async (artifact) => {
-      if (artifact.publicPath) return publicArtifact(artifact, null);
+      if (artifact.publicPath || artifact.publicUrl) return publicArtifact(artifact, null);
       try {
         const metadata = await head(artifact.pathname);
         return publicArtifact(artifact, metadata);
@@ -55,7 +55,7 @@ module.exports = async function handler(req, res) {
   }
   const intent = body.intent === 'view' && artifact.contentType === 'application/pdf' ? 'view' : 'download';
 
-  if (!artifact.publicPath) {
+  if (!artifact.publicPath && !artifact.publicUrl) {
     try {
       await head(artifact.pathname);
     } catch {
@@ -68,9 +68,9 @@ module.exports = async function handler(req, res) {
   const expiresAt = new Date(issuedAt.getTime() + 5 * 60 * 1000);
   const profile = user.user_metadata || {};
 
-  let downloadUrl = artifact.publicPath;
-  let viewUrl = artifact.publicPath;
-  if (!artifact.publicPath) {
+  let downloadUrl = artifact.publicPath || artifact.publicUrl;
+  let viewUrl = artifact.publicPath || artifact.publicUrl;
+  if (!artifact.publicPath && !artifact.publicUrl) {
     const signedToken = await issueSignedToken({
       pathname: artifact.pathname,
       operations: ['get'],
@@ -97,7 +97,7 @@ module.exports = async function handler(req, res) {
       phone: String(profile.phone || '').slice(0, 60),
       platform: artifact.platform,
       architecture: artifact.architecture,
-      version: '0.3.0',
+      version: artifact.version || '0.3.0',
       downloadedAt: issuedAt.toISOString(),
       userAgent: String(req.headers['user-agent'] || '').slice(0, 500)
     }), {
