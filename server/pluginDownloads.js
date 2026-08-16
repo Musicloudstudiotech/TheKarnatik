@@ -36,6 +36,16 @@ const ARTIFACTS = Object.freeze({
     filename: `Karnatik-Tanpura-${RELEASE_VERSION}-User-Guide.pdf`,
     pathname: `Karnatik-Tanpura-${RELEASE_VERSION}-User-Guide.pdf`,
     contentType: 'application/pdf'
+  },
+  'installation-sop': {
+    id: 'installation-sop',
+    platform: 'Documentation',
+    architecture: 'PDF',
+    filename: 'Karnatik-Tanpura-Installation-Help-SOP.pdf',
+    pathname: 'Karnatik-Tanpura-Installation-Help-SOP.pdf',
+    contentType: 'application/pdf',
+    publicPath: '/docs/Karnatik-Tanpura-Installation-Help-SOP.pdf',
+    size: 2763572
   }
 });
 
@@ -104,8 +114,8 @@ function publicArtifact(artifact, metadata) {
     architecture: artifact.architecture,
     filename: artifact.filename,
     version: RELEASE_VERSION,
-    available: Boolean(metadata),
-    size: Number(metadata?.size || 0)
+    available: Boolean(metadata || artifact.publicPath),
+    size: Number(metadata?.size || artifact.size || 0)
   };
 }
 

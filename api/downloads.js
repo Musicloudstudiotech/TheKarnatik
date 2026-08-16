@@ -29,6 +29,7 @@ module.exports = async function handler(req, res) {
 
   if (req.method === 'GET') {
     const artifacts = await Promise.all(Object.values(ARTIFACTS).map(async (artifact) => {
+      if (artifact.publicPath) return publicArtifact(artifact, null);
       try {
         const metadata = await head(artifact.pathname);
         return publicArtifact(artifact, metadata);
@@ -52,30 +53,38 @@ module.exports = async function handler(req, res) {
     res.status(400).json({ error: 'Unknown download.' });
     return;
   }
-  const intent = body.intent === 'view' && artifact.id === 'user-guide' ? 'view' : 'download';
+  const intent = body.intent === 'view' && artifact.contentType === 'application/pdf' ? 'view' : 'download';
 
-  try {
-    await head(artifact.pathname);
-  } catch {
-    res.status(404).json({ error: 'This build is not available yet.' });
-    return;
+  if (!artifact.publicPath) {
+    try {
+      await head(artifact.pathname);
+    } catch {
+      res.status(404).json({ error: 'This build is not available yet.' });
+      return;
+    }
   }
 
   const issuedAt = new Date();
   const expiresAt = new Date(issuedAt.getTime() + 5 * 60 * 1000);
   const profile = user.user_metadata || {};
 
-  const signedToken = await issueSignedToken({
-    pathname: artifact.pathname,
-    operations: ['get'],
-    validUntil: expiresAt.getTime()
-  });
-  const { presignedUrl } = await presignUrl(signedToken, {
-    access: 'private',
-    operation: 'get',
-    pathname: artifact.pathname,
-    validUntil: expiresAt.getTime()
-  });
+  let downloadUrl = artifact.publicPath;
+  let viewUrl = artifact.publicPath;
+  if (!artifact.publicPath) {
+    const signedToken = await issueSignedToken({
+      pathname: artifact.pathname,
+      operations: ['get'],
+      validUntil: expiresAt.getTime()
+    });
+    const { presignedUrl } = await presignUrl(signedToken, {
+      access: 'private',
+      operation: 'get',
+      pathname: artifact.pathname,
+      validUntil: expiresAt.getTime()
+    });
+    downloadUrl = getDownloadUrl(presignedUrl);
+    viewUrl = presignedUrl;
+  }
 
   if (intent === 'download') {
     await put(eventPath(artifact.id, issuedAt.toISOString()), JSON.stringify({
@@ -100,8 +109,8 @@ module.exports = async function handler(req, res) {
   }
 
   res.status(201).json({
-    downloadUrl: getDownloadUrl(presignedUrl),
-    viewUrl: presignedUrl,
+    downloadUrl,
+    viewUrl,
     expiresAt: expiresAt.toISOString()
   });
 };

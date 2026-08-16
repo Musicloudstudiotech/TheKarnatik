@@ -69,6 +69,12 @@ const installerCopy = {
     detail: 'Installation, BPM, controls, export, and testing',
     formats: 'PDF',
     icon: FileText
+  },
+  'installation-sop': {
+    title: 'Installation help SOP',
+    detail: 'Visual steps for Apple Silicon, Intel Mac, and Windows security warnings',
+    formats: 'PDF',
+    icon: ShieldCheck
   }
 };
 
@@ -266,6 +272,13 @@ export default function DownloadsPage({ session }) {
       if (intent === 'view') {
         if (viewer) viewer.location.replace(payload.viewUrl);
         else window.open(payload.viewUrl, '_blank', 'noopener,noreferrer');
+      } else if (payload.downloadUrl.startsWith('/')) {
+        const link = document.createElement('a');
+        link.href = payload.downloadUrl;
+        link.download = artifact.filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
       } else {
         window.location.assign(payload.downloadUrl);
       }
@@ -369,6 +382,7 @@ export default function DownloadsPage({ session }) {
             {orderedArtifacts.map((artifact) => {
               const copy = installerCopy[artifact.id];
               const Icon = copy.icon;
+              const isPdf = artifact.id === 'user-guide' || artifact.id === 'installation-sop';
               const downloading = downloadState[`${artifact.id}:download`] === 'starting';
               const viewing = downloadState[`${artifact.id}:view`] === 'starting';
               return (
@@ -383,13 +397,13 @@ export default function DownloadsPage({ session }) {
                     <span>{artifact.available ? formatBytes(artifact.size) : 'Preparing build'}</span>
                   </div>
                   <div className="download-actions">
-                    {artifact.id === 'user-guide' ? (
+                    {isPdf ? (
                       <button
                         className="download-secondary-action"
                         type="button"
                         onClick={() => accessArtifact(artifact, 'view')}
                         disabled={!artifact.available || viewing || loadingArtifacts}
-                        title={artifact.available ? 'Read the beta user guide' : 'The beta user guide is being prepared'}
+                        title={artifact.available ? `Read ${copy.title}` : `${copy.title} is being prepared`}
                       >
                         {viewing ? <LoaderCircle className="downloads-spinner" size={19} /> : <Eye size={19} />}
                         {viewing ? 'Opening...' : artifact.available ? 'Read PDF' : 'Soon'}
@@ -402,7 +416,7 @@ export default function DownloadsPage({ session }) {
                       title={artifact.available ? `Download ${copy.title}` : `${copy.title} is being prepared`}
                     >
                       {downloading ? <LoaderCircle className="downloads-spinner" size={19} /> : <ArrowDownToLine size={19} />}
-                      {downloading ? 'Starting...' : artifact.available ? artifact.id === 'user-guide' ? 'Download PDF' : 'Download' : 'Soon'}
+                      {downloading ? 'Starting...' : artifact.available ? isPdf ? 'Download PDF' : 'Download' : 'Soon'}
                     </button>
                   </div>
                 </article>
