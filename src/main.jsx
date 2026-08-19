@@ -51,7 +51,7 @@ import ragadnaManifest from '../public/ragadna/ragadna-manifest.json';
 import ragadnaFeatureModel from '../data/raga-samples/ragadna-feature-model.json';
 
 const chromatic = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-const KANBAN_OWNER_EMAIL = 'ramanujan.mk@musicloudstudio.com';
+const PLANNER_OWNER_EMAIL = 'ramanujan.mk@musicloudstudio.com';
 
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
@@ -59,7 +59,7 @@ function normalizeEmail(email) {
 
 function pageFromLocation() {
   const path = window.location.pathname.toLowerCase();
-  if (path === '/kanban') return 'kanban';
+  if (path === '/planner' || path === '/kanban') return 'planner';
   if (path === '/chordanalyser' || path === '/chord-analyser') return 'chords';
   return 'practice';
 }
@@ -783,7 +783,7 @@ const swaraRoleRank = {
 };
 
 function App({ user, onSignOut }) {
-  const canAccessKanban = normalizeEmail(user?.email) === KANBAN_OWNER_EMAIL;
+  const canAccessPlanner = normalizeEmail(user?.email) === PLANNER_OWNER_EMAIL;
   const [activePage, setActivePage] = useState(pageFromLocation);
   const [system, setSystem] = useState('All');
   const [query, setQuery] = useState('');
@@ -866,8 +866,8 @@ function App({ user, onSignOut }) {
 
   function navigateToPage(page) {
     setActivePage(page);
-    const path = page === 'kanban'
-      ? '/Kanban'
+    const path = page === 'planner'
+      ? '/planner'
       : page === 'chords'
         ? '/ChordAnalyser'
         : '/app';
@@ -1570,8 +1570,8 @@ function App({ user, onSignOut }) {
           <button className={`nav-item ${activePage === 'karnatik' ? 'active' : ''}`} onClick={() => navigateToPage('karnatik')}><BookOpen size={17} /> Karnatik Ragas</button>
           <button className={`nav-item ${activePage === 'quiz' ? 'active' : ''}`} onClick={() => navigateToPage('quiz')}><ClipboardList size={17} /> Quiz</button>
           <button className={`nav-item ${activePage === 'ear-training' ? 'active' : ''}`} onClick={() => navigateToPage('ear-training')}><Music2 size={17} /> Ear Training</button>
-          {canAccessKanban ? (
-            <button className={`nav-item ${activePage === 'kanban' ? 'active' : ''}`} onClick={() => navigateToPage('kanban')}><Columns3 size={17} /> Kanban</button>
+          {canAccessPlanner ? (
+            <button className={`nav-item ${activePage === 'planner' ? 'active' : ''}`} onClick={() => navigateToPage('planner')}><Columns3 size={17} /> Planner</button>
           ) : null}
         </nav>
         <div className="top-actions">
@@ -1614,8 +1614,8 @@ function App({ user, onSignOut }) {
         </aside>
         )}
 
-        {activePage === 'kanban' ? (
-          <KanbanPage canAccess={canAccessKanban} />
+        {activePage === 'planner' ? (
+          <PlannerPage canAccess={canAccessPlanner} user={user} />
         ) : activePage === 'raga-dna' ? (
           <RagaDnaPage ragaDetector={ragaDetector} startRagaDetection={startRagaDetection} selected={selected} pitch={pitch} />
         ) : activePage === 'shruthi' ? (
@@ -2031,17 +2031,26 @@ function ShruthiPage({
   );
 }
 
-function KanbanPage({ canAccess }) {
-  const [columns, setColumns] = useState([]);
+const plannerStatusOptions = [
+  { id: 'planned', label: 'Planned' },
+  { id: 'in-progress', label: 'In progress' },
+  { id: 'blocked', label: 'Blocked' },
+  { id: 'done', label: 'Done' }
+];
+
+function PlannerPage({ canAccess, user }) {
+  const [phases, setPhases] = useState([]);
+  const [taskStatuses, setTaskStatuses] = useState(() => user?.user_metadata?.karnatik_planner_statuses || {});
   const [status, setStatus] = useState(canAccess ? 'loading' : 'denied');
   const [error, setError] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
+  const [savingTaskId, setSavingTaskId] = useState('');
 
   useEffect(() => {
     if (!canAccess || !supabase) return undefined;
 
     let cancelled = false;
-    async function loadKanban() {
+    async function loadPlanner() {
       setStatus('loading');
       setError('');
       try {
@@ -2050,34 +2059,61 @@ function KanbanPage({ canAccess }) {
           throw new Error('Your secure session could not be verified. Please sign in again.');
         }
 
-        const response = await fetch('/api/kanban', {
+        const response = await fetch('/api/planner', {
           headers: { Authorization: `Bearer ${data.session.access_token}` }
         });
         const payload = await response.json();
         if (!response.ok) {
-          throw new Error(payload.error || 'The Kanban board could not be loaded.');
+          throw new Error(payload.error || 'The product planner could not be loaded.');
         }
         if (!cancelled) {
-          setColumns(Array.isArray(payload.columns) ? payload.columns : []);
+          setPhases(Array.isArray(payload.phases) ? payload.phases : []);
           setStatus('ready');
         }
       } catch (loadError) {
         if (!cancelled) {
-          setError(loadError.message || 'The Kanban board could not be loaded.');
+          setError(loadError.message || 'The product planner could not be loaded.');
           setStatus('error');
         }
       }
     }
 
-    loadKanban();
+    loadPlanner();
     return () => {
       cancelled = true;
     };
   }, [canAccess, reloadKey]);
 
+  const allTasks = phases.flatMap((phase) => phase.tasks);
+  const progress = allTasks.reduce((summary, task) => {
+    const taskStatus = taskStatuses[task.id] || 'planned';
+    summary[taskStatus] += 1;
+    return summary;
+  }, { planned: 0, 'in-progress': 0, blocked: 0, done: 0 });
+  const completion = allTasks.length ? Math.round((progress.done / allTasks.length) * 100) : 0;
+
+  async function updateTaskStatus(taskId, nextStatus) {
+    if (!supabase || savingTaskId) return;
+    const previousStatuses = taskStatuses;
+    const nextStatuses = { ...taskStatuses, [taskId]: nextStatus };
+    setTaskStatuses(nextStatuses);
+    setSavingTaskId(taskId);
+    setError('');
+
+    const { error: updateError } = await supabase.auth.updateUser({
+      data: { karnatik_planner_statuses: nextStatuses }
+    });
+
+    setSavingTaskId('');
+    if (updateError) {
+      setTaskStatuses(previousStatuses);
+      setError(`Status was not saved: ${updateError.message}`);
+    }
+  }
+
   if (!canAccess) {
     return (
-      <section className="raga-pane kanban-page private-page-state">
+      <section className="raga-pane planner-page private-page-state">
         <LockKeyhole size={28} />
         <h1>Page not available</h1>
         <p>This page is not available for your account.</p>
@@ -2086,11 +2122,12 @@ function KanbanPage({ canAccess }) {
   }
 
   return (
-    <section className="raga-pane kanban-page">
-      <div className="raga-header">
+    <section className="raga-pane planner-page">
+      <div className="planner-header">
         <div>
-          <h1>Product Kanban</h1>
-          <p>Private feature tracking for Karnatik.ai.</p>
+          <span className="planner-kicker">Karnatik.ai delivery roadmap</span>
+          <h1>Product Planner</h1>
+          <p>Release work, native apps, the web launch, and longer-term music intelligence in one private view.</p>
         </div>
         <span className="owner-only-label"><LockKeyhole size={15} /> Owner only</span>
       </div>
@@ -2101,26 +2138,75 @@ function KanbanPage({ canAccess }) {
         </div>
       ) : status === 'error' ? (
         <div className="private-page-state compact">
-          <h2>Kanban unavailable</h2>
+          <h2>Planner unavailable</h2>
           <p>{error}</p>
           <button className="primary-small" onClick={() => setReloadKey((value) => value + 1)}>Retry</button>
         </div>
       ) : (
-        <div className="kanban-board">
-          {columns.map((column) => (
-            <div className={`kanban-column ${column.tone}`} key={column.title}>
-              <h3>{column.title}</h3>
-              <div className="kanban-items">
-                {column.items.map((item) => (
-                  <article key={item.title}>
-                    <strong>{item.title}</strong>
-                    <span>{item.meta}</span>
-                  </article>
-                ))}
-              </div>
+        <>
+          <section className="planner-summary" aria-label="Planner progress">
+            <div className="planner-progress-copy">
+              <span>Overall completion</span>
+              <strong>{completion}%</strong>
             </div>
-          ))}
-        </div>
+            <div className="planner-progress-track"><span style={{ width: `${completion}%` }} /></div>
+            <dl>
+              <div><dt>{progress.done}</dt><dd>Done</dd></div>
+              <div><dt>{progress['in-progress']}</dt><dd>In progress</dd></div>
+              <div><dt>{progress.blocked}</dt><dd>Blocked</dd></div>
+              <div><dt>{progress.planned}</dt><dd>Planned</dd></div>
+            </dl>
+          </section>
+
+          {error ? <p className="planner-save-error">{error}</p> : null}
+
+          <div className="planner-phases">
+            {phases.map((phase) => {
+              const phaseDone = phase.tasks.filter((task) => taskStatuses[task.id] === 'done').length;
+              return (
+                <section className="planner-phase" key={phase.id}>
+                  <header>
+                    <div className="planner-phase-number">{phase.number}</div>
+                    <div>
+                      <h2>{phase.title}</h2>
+                      <p>{phase.outcome}</p>
+                    </div>
+                    <div className="planner-phase-target">
+                      <span>Target</span>
+                      <strong>{phase.target}</strong>
+                      <small>{phaseDone}/{phase.tasks.length} complete</small>
+                    </div>
+                  </header>
+                  <div className="planner-task-list">
+                    {phase.tasks.map((task) => {
+                      const taskStatus = taskStatuses[task.id] || 'planned';
+                      return (
+                        <article className={`planner-task status-${taskStatus}`} key={task.id}>
+                          <span className="planner-task-state" aria-hidden="true" />
+                          <div className="planner-task-copy">
+                            <strong>{task.title}</strong>
+                            <p>{task.detail}</p>
+                          </div>
+                          <span className={`planner-priority priority-${task.priority.toLowerCase()}`}>{task.priority}</span>
+                          <label>
+                            <span className="sr-only">Status for {task.title}</span>
+                            <select
+                              value={taskStatus}
+                              disabled={savingTaskId === task.id}
+                              onChange={(event) => updateTaskStatus(task.id, event.target.value)}
+                            >
+                              {plannerStatusOptions.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
+                            </select>
+                          </label>
+                        </article>
+                      );
+                    })}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        </>
       )}
     </section>
   );
@@ -5359,7 +5445,7 @@ function AuthGate() {
   const [session, setSession] = useState(null);
   const [workspaceOpen, setWorkspaceOpen] = useState(() => {
     const path = window.location.pathname.toLowerCase();
-    return path.startsWith('/app') || path === '/kanban';
+    return path.startsWith('/app') || path === '/planner' || path === '/kanban';
   });
   const [loading, setLoading] = useState(isSupabaseConfigured);
   const [email, setEmail] = useState('');
@@ -5396,7 +5482,7 @@ function AuthGate() {
   useEffect(() => {
     const handlePopState = () => {
       const path = window.location.pathname.toLowerCase();
-      setWorkspaceOpen(path.startsWith('/app') || path === '/kanban');
+      setWorkspaceOpen(path.startsWith('/app') || path === '/planner' || path === '/kanban');
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -5455,7 +5541,7 @@ function AuthGate() {
   }
 
   const provider = String(session?.user?.app_metadata?.provider || '');
-  const isWorkspaceOwner = normalizeEmail(session?.user?.email) === KANBAN_OWNER_EMAIL;
+  const isWorkspaceOwner = normalizeEmail(session?.user?.email) === PLANNER_OWNER_EMAIL;
   const canOpenWorkspace = provider !== 'google' || isWorkspaceOwner;
 
   if (session && workspaceOpen && canOpenWorkspace) {

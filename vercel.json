@@ -9,6 +9,7 @@
     { "source": "/app/:path*", "destination": "/index.html" },
     { "source": "/downloads", "destination": "/index.html" },
     { "source": "/Kanban", "destination": "/index.html" },
-    { "source": "/kanban", "destination": "/index.html" }
+    { "source": "/kanban", "destination": "/index.html" },
+    { "source": "/planner", "destination": "/index.html" }
   ]
 }
