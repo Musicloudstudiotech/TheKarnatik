@@ -59,6 +59,7 @@
 }
 
 .downloads-banner {
+  position: relative;
   display: block;
   border-bottom: 1px solid #d9d0c1;
   background: #080705;
@@ -512,3 +513,15 @@
   .download-actions { flex-direction: column; width: 100%; }
   .downloads-footer { align-items: flex-start; flex-direction: column; padding-top: 24px; padding-bottom: 24px; }
 }
+
+.downloads-banner-cta {
+  position: absolute;
+  left: 5%; top: 81.7%; width: 20.1%; height: 9.9%;
+  display: flex; align-items: center; justify-content: center; gap: 0.6em;
+  background: #e4c17b; color: #17130d; border-radius: 0.4vw;
+  font-size: clamp(6px, 1.4vw, 24px); font-weight: 800;
+}
+.downloads-release { padding: 36px 5vw; background: #eee7da; border-bottom: 1px solid #cfc4b2; }
+.downloads-release > div { max-width: 1120px; margin: auto; }
+.downloads-release h1 { margin: 0 0 16px; font-size: clamp(28px, 3.2vw, 44px); }
+.downloads-release p { max-width: 880px; margin: 10px 0 0; color: #555f61; line-height: 1.55; }

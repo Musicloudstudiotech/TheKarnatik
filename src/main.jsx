@@ -5553,7 +5553,7 @@ function AuthGate() {
       <main className="access-gate">
         <section className="access-panel">
           <p className="access-kicker">Downloads access</p>
-          <h1>Your Google sign-in unlocks beta downloads.</h1>
+          <h1>Your Google sign-in unlocks Tanpura downloads.</h1>
           <p className="access-copy">The RAGA Companion workspace remains invite-only.</p>
           <a className="landing-primary" href="/downloads">Open downloads <ArrowRight size={18} /></a>
         </section>
