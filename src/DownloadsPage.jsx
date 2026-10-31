@@ -244,7 +244,9 @@ export default function DownloadsPage({ session }) {
       email: account.email.trim(),
       password: account.password
     });
-    if (error) setAuthError(error.message);
+    if (error) setAuthError(error.message === 'Invalid login credentials'
+      ? 'Email or password not recognised. If you previously used Google, use the Google button above instead.'
+      : error.message);
     setSigningIn(false);
   }
 
@@ -345,19 +347,21 @@ export default function DownloadsPage({ session }) {
           <div className="downloads-gate-heading">
             <ShieldCheck size={30} />
             <div>
-              <h2>Download the installer</h2>
-              <p>Continue with Google to create or access your Karnatik.ai download account.</p>
+              <h2>Free download — sign in to continue</h2>
+              <p>Sign in so we can link your download to your account. Then choose your Mac or Windows installer. No payment is required.</p>
             </div>
           </div>
           <div className="downloads-auth-panel">
+            <p>New here or returning with Google? Use the Google button below. No separate Karnatik.ai password is needed.</p>
             <div className="downloads-google-button-host" ref={googleButtonRef} aria-label="Continue with Google" />
+            <p>Opened this page from WhatsApp? If Google sign-in does not open, open <a href="https://karnatik.ai/downloads">karnatik.ai/downloads</a> in Safari, Chrome, or Edge and try again.</p>
             {signingIn ? (
               <p className="downloads-google-status">
                 <LoaderCircle className="downloads-spinner" size={18} /> Signing in securely...
               </p>
             ) : null}
 
-            <div className="downloads-auth-divider"><span>existing email account</span></div>
+            <div className="downloads-auth-divider"><span>Already have an email/password account?</span></div>
 
             <form className="downloads-account-form" onSubmit={handleEmailAuth}>
               <label>
