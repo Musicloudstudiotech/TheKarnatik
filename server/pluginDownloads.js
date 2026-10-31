@@ -37,7 +37,7 @@ const ARTIFACTS = Object.freeze({
     pathname: `Karnatik-Tanpura-${RELEASE_VERSION}-User-Guide.pdf`,
     contentType: 'application/pdf',
     publicPath: `/docs/Karnatik-Tanpura-${RELEASE_VERSION}-User-Guide.pdf`,
-    size: 132465
+    size: 1026725
   },
   'installation-sop': {
     id: 'installation-sop',
@@ -47,7 +47,7 @@ const ARTIFACTS = Object.freeze({
     pathname: 'Karnatik-Tanpura-0.3.4-Installation-Help.pdf',
     contentType: 'application/pdf',
     publicPath: '/docs/Karnatik-Tanpura-0.3.4-Installation-Help.pdf',
-    size: 132593
+    size: 1026862
   }
 });
 
