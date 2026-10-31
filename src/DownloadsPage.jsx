@@ -467,7 +467,7 @@ export default function DownloadsPage({ session }) {
 
       <footer className="downloads-footer">
         <span>A Musicloudstudio &amp; Technology instrument from Karnatik.ai</span>
-        <a href="mailto:ramanujan.mk@musicloudstudio.com">Support</a>
+        <a href="mailto:contact@musicloudstudio.com">Support</a>
       </footer>
     </main>
   );
