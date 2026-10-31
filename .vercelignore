@@ -6,3 +6,5 @@ outputs/
 work/
 *.log
 .DS_Store
+
+.env*

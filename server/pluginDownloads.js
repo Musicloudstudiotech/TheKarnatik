@@ -2,7 +2,7 @@ const crypto = require('node:crypto');
 const { createClient } = require('@supabase/supabase-js');
 
 const DOWNLOAD_OWNER_EMAIL = 'ramanujan.mk@musicloudstudio.com';
-const RELEASE_VERSION = '0.3.0';
+const RELEASE_VERSION = '0.3.4';
 
 const ARTIFACTS = Object.freeze({
   'mac-apple-silicon': {
@@ -25,11 +25,8 @@ const ARTIFACTS = Object.freeze({
     id: 'windows-x64',
     platform: 'Windows',
     architecture: 'x64',
-    version: '0.3.1',
-    filename: 'Karnatik-Tanpura-0.3.1-Windows-x64-Setup.exe',
-    pathname: 'Karnatik-Tanpura-0.3.1-Windows-x64-Setup.exe',
-    publicPath: '/downloads/Karnatik-Tanpura-0.3.1-Windows-x64-Setup.exe',
-    size: 70129852,
+    filename: `Karnatik-Tanpura-${RELEASE_VERSION}-Windows-x64-Setup.exe`,
+    pathname: `Karnatik-Tanpura-${RELEASE_VERSION}-Windows-x64-Setup.exe`,
     contentType: 'application/vnd.microsoft.portable-executable'
   },
   'user-guide': {
@@ -38,17 +35,19 @@ const ARTIFACTS = Object.freeze({
     architecture: 'PDF',
     filename: `Karnatik-Tanpura-${RELEASE_VERSION}-User-Guide.pdf`,
     pathname: `Karnatik-Tanpura-${RELEASE_VERSION}-User-Guide.pdf`,
-    contentType: 'application/pdf'
+    contentType: 'application/pdf',
+    publicPath: `/docs/Karnatik-Tanpura-${RELEASE_VERSION}-User-Guide.pdf`,
+    size: 3153
   },
   'installation-sop': {
     id: 'installation-sop',
     platform: 'Documentation',
     architecture: 'PDF',
-    filename: 'Karnatik-Tanpura-Installation-Help-SOP.pdf',
-    pathname: 'Karnatik-Tanpura-Installation-Help-SOP.pdf',
+    filename: 'Karnatik-Tanpura-0.3.4-Installation-Help.pdf',
+    pathname: 'Karnatik-Tanpura-0.3.4-Installation-Help.pdf',
     contentType: 'application/pdf',
-    publicPath: '/docs/Karnatik-Tanpura-Installation-Help-SOP.pdf',
-    size: 2763572
+    publicPath: '/docs/Karnatik-Tanpura-0.3.4-Installation-Help.pdf',
+    size: 3278
   }
 });
 

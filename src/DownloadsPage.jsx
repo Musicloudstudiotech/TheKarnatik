@@ -65,7 +65,7 @@ const installerCopy = {
     icon: Monitor
   },
   'user-guide': {
-    title: 'Beta user guide',
+    title: 'User guide',
     detail: 'Installation, BPM, controls, export, and testing',
     formats: 'PDF',
     icon: FileText
@@ -219,7 +219,7 @@ export default function DownloadsPage({ session }) {
     const byId = new Map(artifacts.map((artifact) => [artifact.id, artifact]));
     return Object.keys(installerCopy).map((id) => byId.get(id) || {
       id,
-      version: '0.3.0',
+      version: '0.3.4',
       available: false,
       size: 0
     });
@@ -329,7 +329,16 @@ export default function DownloadsPage({ session }) {
           src="/images/karnatik-tanpura-downloads-banner.webp"
           alt="Karnatik Tanpura VST with Shruthi, string mode, BPM, volume, stereo width, and reverb controls"
         />
+        <span className="downloads-banner-cta">Download free <span aria-hidden="true">→</span></span>
       </a>
+
+      <section className="downloads-release" aria-label="Release announcement">
+        <div>
+          <h1>Karnatik Tanpura 0.3.4 is here</h1>
+          <p>Our production release brings all 24 final Pa/Ma recordings, 12 Shruthi roots, expressive reverb, and improved WAV loop joins across every export length.</p>
+          <p>Available for macOS and Windows. Upgrading from the beta? Export fresh WAVs to use the loop correction.</p>
+        </div>
+      </section>
 
       {!user ? (
         <section className="downloads-gate" id="download-access">
@@ -394,6 +403,7 @@ export default function DownloadsPage({ session }) {
                   </div>
                   <div className="download-meta">
                     <strong>{copy.formats}</strong>
+                    <span>Version {artifact.version}</span>
                     <span>{artifact.available ? formatBytes(artifact.size) : 'Preparing build'}</span>
                   </div>
                   <div className="download-actions">
@@ -443,7 +453,7 @@ export default function DownloadsPage({ session }) {
       <section className="downloads-notes">
         <div>
           <h2>Before you install</h2>
-          <p>This is an unsigned evaluation beta. Your operating system may show an unknown developer warning. Only install files downloaded directly from Karnatik.ai.</p>
+          <p>Mac installers are Developer ID signed and Apple notarized (macOS 12 or later). The Windows installer is unsigned and may show an unknown publisher warning. Download only from Karnatik.ai; never disable your system security protections.</p>
         </div>
         <div>
           <h2>What is included</h2>
@@ -457,7 +467,7 @@ export default function DownloadsPage({ session }) {
 
       <footer className="downloads-footer">
         <span>A Musicloudstudio &amp; Technology instrument from Karnatik.ai</span>
-        <a href="mailto:ramanujan.mk@musicloudstudio.com">Beta support</a>
+        <a href="mailto:ramanujan.mk@musicloudstudio.com">Support</a>
       </footer>
     </main>
   );

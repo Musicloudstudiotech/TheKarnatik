@@ -7,6 +7,7 @@ const {
 } = require('@vercel/blob');
 const {
   ARTIFACTS,
+  RELEASE_VERSION,
   artifactFor,
   authenticatedUser,
   eventPath,
@@ -97,7 +98,7 @@ module.exports = async function handler(req, res) {
       phone: String(profile.phone || '').slice(0, 60),
       platform: artifact.platform,
       architecture: artifact.architecture,
-      version: artifact.version || '0.3.0',
+      version: artifact.version || RELEASE_VERSION,
       downloadedAt: issuedAt.toISOString(),
       userAgent: String(req.headers['user-agent'] || '').slice(0, 500)
     }), {
