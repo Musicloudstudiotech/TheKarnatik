@@ -47,7 +47,7 @@ const ARTIFACTS = Object.freeze({
     pathname: 'Karnatik-Tanpura-0.3.4-Installation-Help.pdf',
     contentType: 'application/pdf',
     publicPath: '/docs/Karnatik-Tanpura-0.3.4-Installation-Help.pdf',
-    size: 3126336
+    size: 3398777
   }
 });
 
